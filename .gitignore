@@ -134,3 +134,17 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Hardhat específico
+blockchain/cache
+blockchain/artifacts
+blockchain/coverage
+blockchain/coverage.json
+blockchain/nodes
+
+# React específico
+frontend/build
+
+# VSCode e outros editores (se ainda não estiver coberto)
+.vscode
+.idea
