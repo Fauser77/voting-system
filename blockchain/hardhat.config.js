@@ -7,7 +7,7 @@ module.exports = {
     ganache: {
       url: "http://127.0.0.1:8545",
       accounts: {
-        mnemonic: "myth like bonus scare over problem client lizard pioneer submit female collect",
+        mnemonic: "ivory adult flame culture column blade cook draw canyon connect release tennis",
       },
     },
   },
