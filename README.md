@@ -106,7 +106,7 @@ O sistema inclui testes abrangentes que cobrem:
 
 1. Clone o repositório:
    ```bash
-   git clone [URL_DO_REPOSITÓRIO]
+   git clone https://github.com/Fauser77/voting-system
    cd sistema-votacao-blockchain
    ```
 
