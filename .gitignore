@@ -148,3 +148,32 @@ frontend/build
 # VSCode e outros editores (se ainda não estiver coberto)
 .vscode
 .idea
+
+# Diretórios de dados Geth
+poa-network/validator*/geth/
+poa-network/validator*/keystore/
+poa-network/validator*/history
+poa-network/validator*/chaindata
+poa-network/validator*/nodes
+poa-network/validator*/nodekey
+poa-network/validator*/dapp/
+poa-network/validator*/ethash/
+poa-network/validator*/transactions.rlp
+
+# Arquivos de log
+poa-network/validator*/geth.log
+poa-network/validator*/logs/
+*.log
+
+# Arquivos de senha
+poa-network/validator*/password.txt
+*.password
+
+# Arquivos com chaves privadas e segredos
+*.key
+*.pem
+*.secret
+*_private*
+
+# Diretórios de IPC
+poa-network/validator*/geth.ipc

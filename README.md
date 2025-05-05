@@ -45,12 +45,20 @@ O sistema é baseado no contrato inteligente `Ballot.sol`, que implementa:
 
 ## Tecnologias Utilizadas
 
-- **Blockchain**: Ethereum, simulado com Ganache para desenvolvimento local
+- **Blockchain**: Ethereum, simulado com Ganache para desenvolvimento local para testes iniciais, e posteriormente Go-Ethereum (Geth) em rede PoA 
 - **Framework de Desenvolvimento**: Hardhat para compilação, testes e deploy
 - **Linguagem de Contratos**: Solidity 0.8.x
 - **Testes**: Mocha e Chai para testes automatizados
 - **Frontend** (planejado): React.js
 - **Integração Blockchain**: Ethers.js para interação com a blockchain
+
+## Rede PoA (Proof of Authority)
+O sistema utiliza uma rede Ethereum PoA para garantir eficiência e controle no processo de votação:
+
+   - Arquitetura: 5 nós validadores em uma rede privada
+   - Consenso: Clique PoA (blocos a cada 5 segundos)
+   - Validação: Apenas nós autorizados podem validar transações
+   - Gerenciamento: Sistema de rotação de validadores
 
 ## Testes Implementados
 
