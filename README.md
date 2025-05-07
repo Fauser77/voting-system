@@ -13,14 +13,26 @@ Este projeto implementa um sistema de votação em blockchain que permite:
 
 ## Estrutura do Projeto
 
-- `/blockchain`: Contratos inteligentes e configuração da blockchain
-  - `/contracts`: Contratos Solidity, incluindo o contrato principal `Ballot.sol`
-  - `/scripts`: Scripts para deploy e interação com a blockchain
-  - `/test`: Testes unitários e de integração dos contratos
-  - `hardhat.config.js`: Configuração do ambiente de desenvolvimento
-- `/frontend`: Interface de usuário em React (em desenvolvimento)
-- `/docs`: Documentação técnica e do usuário
-- `/scripts`: Scripts utilitários
+```
+blockchain/
+├── contracts/               # Smart contracts Solidity
+│   ├── Ballot.sol           # Contrato principal de votação
+│   └── Lock.sol             # Contrato de exemplo do Hardhat
+├── scripts/                 # Scripts de deploy
+├── test/                    # Testes automatizados
+├── hardhat.config.js        # Configuração do Hardhat
+└── poa-network/             # Arquivos da rede PoA
+    ├── genesis.json         # Configuração inicial da blockchain
+    ├── validator1/          # Dados do primeiro validador
+    ├── validator2/          # Dados do segundo validador
+    ├── validator3/          # Dados do terceiro validador
+    ├── validator4/          # Dados do quarto validador
+    ├── validator5/          # Dados do quinto validador
+    ├── start-validators.sh  # Inicia os validadores da rede
+    ├── stop-validators.sh   # Para os validadores de forma limpa
+    ├── monitor-poa.sh       # Monitora o estado da rede PoA
+    └── check-validators.sh  # Verifica quais validadores produziram quais blocos
+```
 
 ## Contrato de Votação Implementado
 
@@ -56,7 +68,7 @@ O sistema é baseado no contrato inteligente `Ballot.sol`, que implementa:
 O sistema utiliza uma rede Ethereum PoA para garantir eficiência e controle no processo de votação:
 
    - Arquitetura: 5 nós validadores em uma rede privada
-   - Consenso: Clique PoA (blocos a cada 5 segundos)
+   - Consenso: Clique PoA (blocos a cada 15 segundos)
    - Validação: Apenas nós autorizados podem validar transações
    - Gerenciamento: Sistema de rotação de validadores
 
@@ -82,35 +94,19 @@ O sistema inclui testes abrangentes que cobrem:
    - Tentativas de voto duplicado
    - Tentativas de voto em candidato inválido
 
-## Estado Atual do Desenvolvimento
-
-- ✅ Contrato inteligente `Ballot.sol` implementado e testado
-- ✅ Configuração do ambiente Hardhat concluída
-- ✅ Testes unitários e de integração funcionando
-- ✅ Script de deploy básico implementado
-- ✅ Integração com Ganache para desenvolvimento local
-- 🔄 Estudos de escalabilidade com redes PoA (Proof of Authority) em andamento
-- 🔄 Exploração de mecanismos de visualização da blockchain
-- ⏳ Frontend em React (planejado)
-- ⏳ Documentação detalhada do usuário (planejada)
-
-## Próximos Passos
-
-1. Desenvolver uma interface frontend para interação com a blockchain
-2. Implementar mecanismos de autenticação de eleitores
-3. Explorar a migração para uma rede Proof of Authority (PoA) com múltiplos validadores
-4. Adicionar ferramentas de monitoramento e visualização da blockchain
-5. Melhorar a documentação do usuário
-
 ## Como Executar (Desenvolvimento)
 
-### Pré-requisitos
+## Comandos Hardhat Básicos
 
-- Node.js (v14+)
-- npm ou yarn
-- Ganache (CLI ou GUI)
+```shell
+npx hardhat help
+npx hardhat test
+REPORT_GAS=true npx hardhat test
+npx hardhat node
+npx hardhat run scripts/deploy.js
+```
 
-### Configuração
+### ## Comandos Hardhat Básicos e teste simples via Ganache
 
 1. Clone o repositório:
    ```bash
@@ -146,3 +142,77 @@ O sistema inclui testes abrangentes que cobrem:
    ```bash
    npx hardhat run scripts/deploy.js --network ganache
    ```
+
+## Rede PoA (Proof of Authority)
+
+Este projeto implementa uma rede blockchain privada baseada no consenso Proof of Authority (PoA), onde um conjunto de validadores pré-definidos são responsáveis pela produção de blocos.
+
+### Configuração da Rede PoA
+
+1. Certifique-se que o Geth está instalado no sistema:
+```shell
+geth version
+```
+
+2. Navegue até a pasta poa-network:
+```shell
+cd poa-network
+```
+
+3. Inicie a rede PoA com os validadores:
+```shell
+./start-validators.sh
+```
+
+Este script iniciará 5 validadores que formarão a rede PoA. Cada validador executa uma instância do Geth configurada para participar do consenso PoA.
+
+### Monitoramento da Rede
+
+Para verificar o estado atual da rede PoA:
+
+```shell
+./monitor-poa.sh
+```
+
+Este comando mostrará:
+- Status de cada validador
+- Número de peers conectados
+- Bloco atual
+- Status de mineração
+- Taxa de produção de blocos
+
+### Verificação de Validadores
+
+Para verificar quais validadores produziram quais blocos:
+
+```shell
+./check-validators.sh
+```
+
+Isso mostrará um histórico dos blocos recentes e quais validadores foram responsáveis por produzi-los.
+
+### Parando a Rede PoA
+
+Para encerrar a rede de forma limpa:
+
+```shell
+./stop-validators.sh
+```
+
+## Observações sobre o Consenso PoA
+
+No consenso PoA implementado (algoritmo Clique do Geth):
+
+1. Os validadores se revezam para produzir blocos em uma ordem determinística
+2. O campo `miner` dos blocos pode mostrar o endereço zero (`0x0000000000000000000000000000000000000000`)
+3. Para identificar qual validador produziu um bloco específico, use o comando `clique.getSnapshot().recents`
+4. O parâmetro `period` no genesis.json determina o intervalo mínimo entre blocos (atualmente configurado para 30 segundos)
+
+## Contrato de Votação
+
+O contrato `Ballot.sol` implementa um sistema de votação com as seguintes funcionalidades:
+
+- Cadastro de candidatos no momento do deploy
+- Administração de direitos de voto
+- Votação segura (apenas eleitores autorizados)
+- Contagem de votos e determinação do vencedor

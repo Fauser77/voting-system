@@ -177,3 +177,6 @@ poa-network/validator*/password.txt
 
 # Diretórios de IPC
 poa-network/validator*/geth.ipc
+
+#Arquivo que contém a senha para acesso dos validators
+poa-network/password.txt
