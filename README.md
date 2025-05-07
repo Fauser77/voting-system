@@ -106,7 +106,7 @@ npx hardhat node
 npx hardhat run scripts/deploy.js
 ```
 
-### ## Comandos Hardhat Básicos e teste simples via Ganache
+## Comandos Hardhat Básicos e teste simples via Ganache
 
 1. Clone o repositório:
    ```bash
