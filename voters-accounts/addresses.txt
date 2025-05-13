@@ -1,0 +1,13 @@
+# Endereços das contas de eleitores
+Chairperson: {694879a40d1ab5d721f629f95a31b89c157cf712}
+Voter 1: {cd129025a28b10c61cdc210f58b8808a91038094}
+Voter 2: {e8e478126502d53c3cecd94feb7ce68893aad645}
+Voter 3: {fcb3a6a90a57148d038455ede0f4d1c343548b43}
+Voter 4: {008236356cc7c1a9f435f3f828434932437990d1}
+
+Chairperson: Public address of the key:   0x694879a40d1aB5D721f629F95a31b89c157CF712
+Voter1: Public address of the key:   0xCD129025A28b10C61cDc210F58b8808A91038094
+Voter2: Public address of the key:   0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645
+Voter3: Public address of the key:   0xfcb3A6a90A57148d038455EDE0f4d1c343548B43
+Voter4: Public address of the key:   0x008236356cc7c1a9F435f3F828434932437990d1
+

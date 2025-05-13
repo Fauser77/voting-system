@@ -178,5 +178,11 @@ poa-network/validator*/password.txt
 # Diretórios de IPC
 poa-network/validator*/geth.ipc
 
-#Arquivo que contém a senha para acesso dos validators
+#Arquivo que contém a senha para acesso dos validators e contas dos eleitores
 poa-network/password.txt
+voters-accounts/chairperson/password.txt
+voters-accounts/voter*/password.txt
+
+#Arquivo que contém a keystore dos eleitores
+voters-accounts/chairperson/keystore
+voters-accounts/voter*/keystore
