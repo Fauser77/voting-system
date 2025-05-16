@@ -186,3 +186,4 @@ voters-accounts/voter*/password.txt
 #Arquivo que contém a keystore dos eleitores
 voters-accounts/chairperson/keystore
 voters-accounts/voter*/keystore
+blockchain/hardhat.config.js
