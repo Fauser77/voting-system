@@ -117,10 +117,6 @@ fi
 VALIDATOR1_ENODE=$(echo "$VALIDATOR1_ENODE" | sed 's/@[0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+:/@127.0.0.1:/g')
 echo "Enode do validador 1 (modificado para localhost): $VALIDATOR1_ENODE"
 
-# Garante que a mineração está ativa no validador 1
-echo "Ativando mineração no validador 1..."
-geth --exec "miner.start()" attach validator1/geth.ipc
-
 # Inicia os outros validadores, também com mineração ativa
 declare -A PORTS
 declare -A HTTP_PORTS
@@ -226,18 +222,6 @@ for i in {1..5}; do
   fi
 done
 
-# Aguarda mais um pouco e verifica novamente
-echo "Aguardando mais 30 segundos para as conexões e mineração se estabilizarem..."
-sleep 30
-
-echo "Verificando conexões novamente após espera..."
-for i in {1..5}; do
-  if [ -S "validator$i/geth.ipc" ]; then
-    echo "Validador $i peers:"
-    geth --exec "admin.peers.length" attach validator$i/geth.ipc
-  fi
-done
-
 echo "Verificando validadores atuais na rede:"
 geth --exec "clique.getSigners()" attach validator1/geth.ipc
 
@@ -254,55 +238,17 @@ echo "IMPORTANTE: Para interromper a rede de forma limpa, use o script stop-vali
 echo "Verificando se os blocos estão sendo minerados..."
 BLOCK_BEFORE=$(geth --exec "eth.blockNumber" attach validator1/geth.ipc 2>/dev/null)
 echo "Bloco atual: $BLOCK_BEFORE"
-echo "Aguardando 20 segundos..."
-sleep 20
+echo "Aguardando 15 segundos..."
+sleep 15
 BLOCK_AFTER=$(geth --exec "eth.blockNumber" attach validator1/geth.ipc 2>/dev/null)
 echo "Bloco após espera: $BLOCK_AFTER"
 
 if [ "$BLOCK_AFTER" -gt "$BLOCK_BEFORE" ]; then
   echo "✅ SUCESSO: Blocos estão sendo minerados! A rede PoA está funcionando."
-  
-  # Verificar qual validador está minerando os blocos
-  LAST_BLOCK=$(geth --exec "eth.getBlock(eth.blockNumber)" attach validator1/geth.ipc)
-  echo "Informações do último bloco:"
-  echo "$LAST_BLOCK" | grep -E "number|miner|timestamp"
 else
   echo "⚠️ AVISO: Não foi detectado aumento no número de blocos."
   echo "Verificando logs para identificar problemas..."
-  
-  # Exibe as últimas 20 linhas de logs de cada validador
-  for i in {1..5}; do
-    echo "### Últimas linhas do log do validador $i ###"
-    tail -n 20 validator$i/validator$i.log
-    echo ""
-  done
-  
-  # Reforçar a ativação da mineração em todos os validadores
-  echo "Tentando reativar a mineração em todos os validadores..."
-  for i in {1..5}; do
-    if [ -S "validator$i/geth.ipc" ]; then
-      echo "Reativando mineração no validador $i..."
-      geth --exec "miner.stop(); miner.start()" attach validator$i/geth.ipc
-    fi
-  done
-  
-  echo "Verificando novamente após reativar mineração..."
-  sleep 10
-  BLOCK_FINAL=$(geth --exec "eth.blockNumber" attach validator1/geth.ipc 2>/dev/null)
-  echo "Bloco após reativação: $BLOCK_FINAL"
-  
-  if [ "$BLOCK_FINAL" -gt "$BLOCK_AFTER" ]; then
-    echo "✅ SUCESSO: Blocos começaram a ser minerados após reativação!"
-  else
-    echo "❌ ERRO: Ainda não há mineração de blocos. Possíveis problemas:"
-    echo "  1. Verifique se as contas dos validadores estão corretamente configuradas no genesis.json"
-    echo "  2. Verifique se o período de selagem (clique.period) no genesis.json não está muito alto"
-    echo "  3. Verifique os logs detalhados para mensagens de erro específicas"
-    echo "  4. Tente reiniciar a rede com o comando: ./stop-validators.sh && ./start-validators-mining-fix.sh"
-  fi
 fi
 
 echo "Para rodar o script que monitora a rede PoA, é necessário executar:"
-echo "./monitor-poa-network.sh"
-echo "Para rodar o script que exibe os validadores de dos blocos gerados, execute:"
-echo "./check-validator.sh"
+echo "./monitor-poa.sh"
