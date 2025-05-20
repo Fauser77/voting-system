@@ -187,3 +187,4 @@ voters-accounts/voter*/password.txt
 voters-accounts/chairperson/keystore
 voters-accounts/voter*/keystore
 blockchain/hardhat.config.js
+blockchain/accounts.config.js

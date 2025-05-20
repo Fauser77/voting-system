@@ -1,0 +1,54 @@
+{
+  "contractAddress": "0x4b15e1da743509d5D7151147D0f47A8895c3472e",
+  "totalBlocks": 4,
+  "blocks": [
+    {
+      "blockNumber": 1282,
+      "timestamp": 1747771793,
+      "transactions": [
+        {
+          "hash": "0x1051ca3f09008d037460fdb19d0271d6ed6d0e2da478a8bab3b9061e974b66c2",
+          "from": "0x008236356cc7c1a9F435f3F828434932437990d1",
+          "type": "vote",
+          "candidateName": "João"
+        }
+      ]
+    },
+    {
+      "blockNumber": 1280,
+      "timestamp": 1747771763,
+      "transactions": [
+        {
+          "hash": "0xdc484547d0e6dfd40c083b8f8859fafb1918bb253802323c8ec01ec8e013bad9",
+          "from": "0xfcb3A6a90A57148d038455EDE0f4d1c343548B43",
+          "type": "vote",
+          "candidateName": "João"
+        }
+      ]
+    },
+    {
+      "blockNumber": 1207,
+      "timestamp": 1747770668,
+      "transactions": [
+        {
+          "hash": "0xd0b9af97f4aa9a8a87b283aede919828b0488366f6c555c26ce21a1ac75469fd",
+          "from": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+          "type": "vote",
+          "candidateName": "Maria"
+        }
+      ]
+    },
+    {
+      "blockNumber": 1202,
+      "timestamp": 1747770593,
+      "transactions": [
+        {
+          "hash": "0x40bda7697d654d61acedb2baca39a6c56f14304ca4f52cd8b4e4ee37ad92647e",
+          "from": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
+          "type": "vote",
+          "candidateName": "João"
+        }
+      ]
+    }
+  ]
+}
