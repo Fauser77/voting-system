@@ -1,62 +1,26 @@
 {
-  "contractAddress": "0xb6139373010647cA1996678A3A6613Dde55201E3",
-  "totalBlocks": 5,
+  "contractAddress": "0x7b695a12d79C23d73f2e7a563F51A519369B8b1d",
+  "totalBlocks": 2,
   "blocks": [
     {
-      "blockNumber": 2374,
-      "timestamp": 1747949658,
+      "blockNumber": 2428,
+      "timestamp": 1747950468,
       "transactions": [
         {
-          "hash": "0x16f62c88e353021ea45f2eea1a385d728000937dcd130f71ffe19b5d96f2825e",
-          "from": "0x694879a40d1aB5D721f629F95a31b89c157CF712",
-          "type": "vote",
-          "candidateName": "Maria"
-        }
-      ]
-    },
-    {
-      "blockNumber": 2371,
-      "timestamp": 1747949613,
-      "transactions": [
-        {
-          "hash": "0x2055c2ade8b417d883bb432e719e0e95a314d3bc2e4a4f25676ef19cc1052e1f",
-          "from": "0x008236356cc7c1a9F435f3F828434932437990d1",
-          "type": "vote",
-          "candidateName": "Paulo"
-        }
-      ]
-    },
-    {
-      "blockNumber": 2370,
-      "timestamp": 1747949598,
-      "transactions": [
-        {
-          "hash": "0x4c909876d5149d827b771d7d9e51da0f66bfcdafd31400af43d2e3e93247b36b",
+          "hash": "0x0987fdf201b670fdb8cb46fd416fefc949dd254dc8e5a683dd28ec7e8026c5f9",
           "from": "0xfcb3A6a90A57148d038455EDE0f4d1c343548B43",
           "type": "vote",
-          "candidateName": "João"
-        }
-      ]
-    },
-    {
-      "blockNumber": 2369,
-      "timestamp": 1747949583,
-      "transactions": [
-        {
-          "hash": "0x5d92573dd9a1554ff8e6ad2f47d3543ac0c8cfde62fe16f3706b9923342d2898",
-          "from": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
-          "type": "vote",
           "candidateName": "Maria"
         }
       ]
     },
     {
-      "blockNumber": 2358,
-      "timestamp": 1747949418,
+      "blockNumber": 2424,
+      "timestamp": 1747950408,
       "transactions": [
         {
-          "hash": "0x6b44468ec91be2fabefa6b177533356af9e91f8140a81124856f08f47d6de39b",
-          "from": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+          "hash": "0x84867ac1c2f711cc15307780600926bbb39f1709e9e22d94bbb0478b982c4228",
+          "from": "0x694879a40d1aB5D721f629F95a31b89c157CF712",
           "type": "vote",
           "candidateName": "João"
         }

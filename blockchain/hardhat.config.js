@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+const { POA_PRIVATE_KEYS } = require('./accounts.config');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -8,13 +9,7 @@ module.exports = {
     poa: {
       url: "http://127.0.0.1:8545", 
       chainId: 12345, 
-      accounts: [
-        "4b303ac43aaaee7491caebd674f22356343b7fbfa936e3b313564fc4132ef744",
-        "e4e79abf49209e47d9082c5544600c83fc0a9249394bdf9d691491f7723f9a4c",
-        "5e26ea4b4c4c07b8b66b9a137c396b5f316b1cf4d906fda1413466f2ad196985",
-        "9af8053caa96a0b4391e03530d6e7896fbca032869be4caf304f3164604ee9bb",
-        "062860eca5db48e22d3dbccc85f698f5c052d17379176e16300a3a937fa27813"
-      ],
+      accounts: POA_PRIVATE_KEYS,
       timeout: 60000
     }
   },
