@@ -4,82 +4,46 @@ Sistema de votação implementado com Solidity para redes Ethereum, incluindo su
 
 ## Estrutura de Arquivos
 
-- **blockchain-manager.js**: Ferramenta completa que integra todas as funcionalidades
-- **deploy.js**: Script para implantação do contrato de votação
-- **interact.js**: Funções para interagir com o contrato existente
-- **utils.js**: Utilitários compartilhados entre os scripts
-- **vote-cli.js**: Interface de linha de comando para o sistema de votação
+- **deploy.js**: Deploy do contrato de votação
+- **interact.js**: Interface CLI e funções para interagir com o contrato
+- **utils.js**: Funções utilitárias compartilhadas
+- **monitor-blocks.js**: Análise de blocos e transações (opcional)
 
 ## Funcionalidades
 
-- Deploy de contratos de votação em redes locais ou PoA
+- Deploy de contratos de votação
 - Gestão de direitos de voto
 - Registro e contabilização de votos
-- Monitoramento de eventos em tempo real
-- Análise de blocos e transações
-- Interface interativa para todas as operações
+- Interface CLI interativa
+- Análise de blocos (debug)
 
 ## Como Usar
 
-### Recomendação Principal
+### Deploy do Contrato
 
 ```bash
-# Gerenciador completo com todas as funcionalidades
-npx hardhat run scripts/blockchain-manager.js --network [network-name]
-```
-
-O gerenciador blockchain oferece uma interface unificada para todas as operações e é a forma recomendada de interagir com o sistema.
-
-### Verificar Contas e Configurações
-
-```bash
-npx hardhat run scripts/blockchain-manager.js --network [network-name]
-# Selecione opção 1 no menu
-```
-
-### Implantar Novo Contrato
-
-```bash
-# Método Simples
 npx hardhat run scripts/deploy.js --network [network-name]
-
-# Método Interativo
-npx hardhat run scripts/blockchain-manager.js --network [network-name]
-# Selecione opção 2 no menu
 ```
 
-### Interagir com Contrato Existente
+### Interagir com o Contrato
 
 ```bash
-# Método Simples
 npx hardhat run scripts/interact.js --network [network-name]
-
-# Método Interativo
-npx hardhat run scripts/blockchain-manager.js --network [network-name]
-# Selecione opção 3 no menu
 ```
 
-### CLI de Votação Alternativa
+Menu interativo com opções:
+- Ver informações do contrato
+- Conceder direitos de voto
+- Registrar votos
+- Visualizar resultados
+
+### Análise de Blocos (Opcional)
 
 ```bash
-npx hardhat run scripts/vote-cli.js --network [network-name]
-```
-
-### Monitoramento e Análise
-
-```bash
-npx hardhat run scripts/blockchain-manager.js --network [network-name]
-# Selecione opção 4 no menu
+npx hardhat run scripts/monitor-blocks.js --network [network-name]
 ```
 
 ## Configuração
-
-### Tornar Scripts Executáveis (Linux/macOS)
-
-```bash
-chmod +x scripts/blockchain-manager.js
-chmod +x scripts/vote-cli.js
-```
 
 ### Requisitos
 
@@ -89,9 +53,8 @@ chmod +x scripts/vote-cli.js
 
 ## Redes Suportadas
 
-- Redes locais (Hardhat, Ganache)
+- Redes locais (Hardhat)
 - Redes PoA personalizadas
-- Redes de teste públicas (Sepolia, Goerli)
 
 ## Observações
 
@@ -99,4 +62,4 @@ chmod +x scripts/vote-cli.js
 - Cada eleitor só pode votar uma vez
 - O sistema registra eventos para auditoria das votações
 - Os resultados são contabilizados e o vencedor é determinado automaticamente
-- O arquivo `contract-address.txt` é criado automaticamente no deploy e utilizado pelos outros scripts
+- O arquivo `contract-address.txt` é criado automaticamente no deploy

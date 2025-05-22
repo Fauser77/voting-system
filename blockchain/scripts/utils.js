@@ -1,108 +1,101 @@
-// utils.js
-// Funções de utilidade compartilhadas para todos os scripts
 const fs = require('fs');
 const { ethers } = require('hardhat');
 
-/**
- * Lê o endereço do contrato de um arquivo
- * @returns {Promise<string>} Endereço do contrato
- */
-async function getContractAddress() {
+function getContractAddress() {
   try {
-    const addressFile = fs.readFileSync('contract-address.txt', 'utf8');
-    return addressFile.split(':')[1].trim();
+    return fs.readFileSync('contract-address.txt', 'utf8').trim();
   } catch (error) {
-    console.error("Erro ao ler o endereço do contrato:");
-    console.error("Certifique-se de que o deploy foi executado e que o arquivo contract-address.txt existe.");
-    throw error;
+    throw new Error("Contract address not found. Run deploy script first.");
   }
 }
 
-/**
- * Salva o endereço do contrato em um arquivo
- * @param {string} address - Endereço do contrato
- * @param {string} network - Nome da rede (ex: "PoA", "local")
- */
-function saveContractAddress(address, network = "PoA") {
-  fs.writeFileSync('contract-address.txt', `Endereço do contrato Ballot na rede ${network}: ${address}\n`);
-  console.log(`Endereço do contrato salvo em 'contract-address.txt'`);
-}
-
-/**
- * Conecta ao contrato Ballot
- * @param {string} address - Endereço do contrato (opcional)
- * @returns {Promise<Contract>} Instância do contrato
- */
 async function connectToBallot(address = null) {
-  // Se o endereço não for fornecido, tentar ler do arquivo
-  const contractAddress = address || await getContractAddress();
-  
-  // Conectar ao contrato
+  const contractAddress = address || getContractAddress();
   const Ballot = await ethers.getContractFactory("Ballot");
   return await Ballot.attach(contractAddress);
 }
 
-/**
- * Exibe informações sobre o contrato de votação
- * @param {Contract} ballot - Instância do contrato
- */
-async function displayBallotInfo(ballot) {
-  console.log("=== Informações do Contrato ===");
+async function displayBallotInfo(ballot, accounts = null) {
+  console.log("=== Contract Info ===");
   
   const chairPerson = await ballot.chairPerson();
-  console.log(`ChairPerson: ${chairPerson}`);
-  
   const numProposals = await ballot.getProposalCount();
-  console.log(`Número de propostas: ${numProposals}`);
   
-  // Listar candidatos
-  console.log("\nLista de candidatos:");
+  console.log(`ChairPerson: ${chairPerson}`);
+  console.log(`Candidates: ${numProposals}`);
+  
+  console.log("\nCandidates:");
   for (let i = 0; i < numProposals; i++) {
     const candidate = await ballot.getCandidate(i);
-    console.log(`  [${i}] ${candidate[0]} (${candidate[1]} votos)`);
+    console.log(`  [${i}] ${candidate[0]} (${candidate[1]} votes)`);
   }
   
-  return numProposals;
+  if (accounts) {
+    console.log("\nAccounts status:");
+    for (let i = 0; i < Math.min(accounts.length, 5); i++) {
+      const addr = accounts[i].address;
+      const hasRight = await ballot.hasRightToVote(addr);
+      const voter = await ballot.voters(addr);
+      
+      console.log(`  [${i}] ${addr}`);
+      console.log(`      Rights: ${hasRight ? '✓' : '✗'} | Voted: ${voter.isVoted ? '✓' : '✗'}`);
+    }
+  }
 }
 
-/**
- * Exibe os resultados da votação
- * @param {Contract} ballot - Instância do contrato
- */
 async function displayResults(ballot) {
+  console.log("=== Election Results ===");
+  
   const numProposals = await ballot.getProposalCount();
-  
-  console.log("=== Resultados da Votação ===");
-  console.log("Contagem de votos por candidato:");
-  
-  // Calcular total de votos para percentuais
   let totalVotes = 0;
+  
+  // Calculate total votes
   for (let i = 0; i < numProposals; i++) {
     const candidate = await ballot.getCandidate(i);
     totalVotes += Number(candidate[1]);
   }
   
-  // Mostrar resultados
+  // Display results
+  console.log("Vote count:");
   for (let i = 0; i < numProposals; i++) {
     const candidate = await ballot.getCandidate(i);
     const voteCount = Number(candidate[1]);
     const percentage = totalVotes > 0 ? ((voteCount * 100) / totalVotes).toFixed(1) : "0.0";
     
-    console.log(`  [${i}] ${candidate[0]}: ${voteCount} votos (${percentage}%)`);
+    console.log(`  [${i}] ${candidate[0]}: ${voteCount} votes (${percentage}%)`);
   }
   
-  // Verificar o vencedor
+  // Winner
   const winnerIndex = await ballot.winningProposal();
   const winnerName = await ballot.winnerName();
   
-  console.log("\nResultado da eleição:");
-  console.log(`Vencedor: ${winnerName} (índice ${winnerIndex})`);
+  console.log(`\nWinner: ${winnerName} (index ${winnerIndex})`);
+  console.log(`Total votes: ${totalVotes}`);
+}
+
+function setupVoteMonitoring(ballot) {
+  console.log("Starting vote monitoring...");
+  
+  const filter = ballot.filters.VoteCast();
+  
+  const handleEvent = async (blockNumber, candidateName) => {
+    console.log(`[${new Date().toLocaleTimeString()}] New vote:`);
+    console.log(`  Block: ${blockNumber}`);
+    console.log(`  Candidate: ${candidateName}`);
+  };
+  
+  ballot.on(filter, handleEvent);
+  
+  return () => {
+    console.log("Stopping monitoring...");
+    ballot.off(filter, handleEvent);
+  };
 }
 
 module.exports = {
   getContractAddress,
-  saveContractAddress,
   connectToBallot,
   displayBallotInfo,
-  displayResults
+  displayResults,
+  setupVoteMonitoring
 };
