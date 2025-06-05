@@ -75,7 +75,7 @@ const Login = () => {
           color="text.secondary"
           sx={{ mt: 2, textAlign: 'center' }}
         >
-          Sistema seguro baseado em Blockchain
+          Sistema de votação eletrônica baseado em Blockchain 
         </Typography>
       </Box>
     </Container>
