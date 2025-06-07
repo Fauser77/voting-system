@@ -1,7 +1,31 @@
 {
   "contractAddress": "0x7b695a12d79C23d73f2e7a563F51A519369B8b1d",
-  "totalBlocks": 2,
+  "totalBlocks": 4,
   "blocks": [
+    {
+      "blockNumber": 2957,
+      "timestamp": 1749332736,
+      "transactions": [
+        {
+          "hash": "0xc009c21c67dfd3ee6cebd4b60e2ecc5a9ea868341c9efaa3ff5c134637d2b0a9",
+          "from": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
+          "type": "vote",
+          "candidateName": "Paulo"
+        }
+      ]
+    },
+    {
+      "blockNumber": 2590,
+      "timestamp": 1749158805,
+      "transactions": [
+        {
+          "hash": "0xbf2c45d2d35ff7b058f5087db6dc5583f151243300d14dcc18b4811bbb40c5a3",
+          "from": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+          "type": "vote",
+          "candidateName": "João"
+        }
+      ]
+    },
     {
       "blockNumber": 2428,
       "timestamp": 1747950468,

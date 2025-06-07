@@ -10,7 +10,9 @@ import { theme } from './styles/theme';
 import Login from './pages/Login';
 import VoterDashboard from './pages/VoterDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Vote from './pages/Vote';
 import Results from './pages/Results';
+import VerifyVote from './pages/VerifyVote';
 
 // Componentes
 import Header from './components/common/Header';
@@ -81,10 +83,26 @@ function App() {
                   </ProtectedRoute>
                 } />
                 
+                <Route path="/vote" element={
+                  <ProtectedRoute requireAuth>
+                    <Layout>
+                      <Vote />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
                 <Route path="/results" element={
                   <Layout>
                     <Results />
                   </Layout>
+                } />
+                
+                <Route path="/verify-vote" element={
+                  <ProtectedRoute requireAuth>
+                    <Layout>
+                      <VerifyVote />
+                    </Layout>
+                  </ProtectedRoute>
                 } />
                 
                 <Route path="*" element={<Navigate to="/" replace />} />
