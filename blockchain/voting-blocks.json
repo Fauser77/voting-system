@@ -1,7 +1,19 @@
 {
   "contractAddress": "0x7b695a12d79C23d73f2e7a563F51A519369B8b1d",
-  "totalBlocks": 4,
+  "totalBlocks": 5,
   "blocks": [
+    {
+      "blockNumber": 3135,
+      "timestamp": 1749335406,
+      "transactions": [
+        {
+          "hash": "0xec74ed25a29fab2e5ae5dde7b3f6a3de5eabf32a0e437d82ca475ab74e0a968d",
+          "from": "0x008236356cc7c1a9F435f3F828434932437990d1",
+          "type": "vote",
+          "candidateName": "João"
+        }
+      ]
+    },
     {
       "blockNumber": 2957,
       "timestamp": 1749332736,

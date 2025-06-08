@@ -13,6 +13,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import Vote from './pages/Vote';
 import Results from './pages/Results';
 import VerifyVote from './pages/VerifyVote';
+import GrantRights from './pages/GrantRights';
+import BlockchainMonitor from './pages/BlockchainMonitor';
 
 // Componentes
 import Header from './components/common/Header';
@@ -101,6 +103,22 @@ function App() {
                   <ProtectedRoute requireAuth>
                     <Layout>
                       <VerifyVote />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/admin/grant-rights" element={
+                  <ProtectedRoute requireAuth requireChairperson>
+                    <Layout>
+                      <GrantRights />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/admin/monitor" element={
+                  <ProtectedRoute requireAuth requireChairperson>
+                    <Layout>
+                      <BlockchainMonitor />
                     </Layout>
                   </ProtectedRoute>
                 } />
