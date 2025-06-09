@@ -28,7 +28,7 @@ import { votingService } from '../services/votingService';
 
 const VerifyVote = () => {
   const navigate = useNavigate();
-  const { user, voterInfo } = useAuth();
+  const { user, voterInfo, isChairperson } = useAuth();
   const { contract, provider } = useWeb3();
   
   const [voteData, setVoteData] = useState(null);
@@ -38,7 +38,7 @@ const VerifyVote = () => {
   useEffect(() => {
     if (!voterInfo?.hasVoted) {
       setError('Você ainda não votou nesta eleição');
-      setTimeout(() => navigate('/voter'), 3000);
+      setTimeout(() => navigate(isChairperson ? '/admin' : '/voter'), 3000);
       return;
     }
     
@@ -135,7 +135,7 @@ const VerifyVote = () => {
           <Button
             variant="outlined"
             startIcon={<BackIcon />}
-            onClick={() => navigate('/voter')}
+            onClick={() => navigate(isChairperson ? '/admin' : '/voter')}
           >
             Voltar ao Dashboard
           </Button>
@@ -150,7 +150,7 @@ const VerifyVote = () => {
         <Button
           variant="text"
           startIcon={<BackIcon />}
-          onClick={() => navigate('/voter')}
+          onClick={() => navigate(isChairperson ? '/admin' : '/voter')}
           sx={{ mb: 2 }}
         >
           Voltar ao Dashboard

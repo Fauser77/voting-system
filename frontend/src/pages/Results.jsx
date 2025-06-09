@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -19,13 +20,17 @@ import {
   EmojiEvents as TrophyIcon,
   Person as PersonIcon,
   HowToVote as VoteIcon,
+  ArrowBack as BackIcon,
 } from '@mui/icons-material';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { useWeb3 } from '../contexts/Web3Context';
+import { useAuth } from '../contexts/AuthContext';
 import { votingService } from '../services/votingService';
 
 const Results = () => {
+  const navigate = useNavigate();
   const { contract } = useWeb3();
+  const { isAuthenticated, isChairperson } = useAuth();
   const [results, setResults] = useState([]);
   const [winner, setWinner] = useState(null);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -95,6 +100,17 @@ const Results = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
+        {isAuthenticated && (
+          <Button
+            variant="text"
+            startIcon={<BackIcon />}
+            onClick={() => navigate(isChairperson ? '/admin' : '/voter')}
+            sx={{ mb: 2 }}
+          >
+            Voltar ao Dashboard
+          </Button>
+        )}
+
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Resultados da Eleição
         </Typography>

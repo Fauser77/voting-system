@@ -30,6 +30,7 @@ import {
   Person as PersonIcon,
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
+  ArrowBack as BackIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
@@ -37,7 +38,7 @@ import { votingService } from '../services/votingService';
 
 const Vote = () => {
   const navigate = useNavigate();
-  const { user, voterInfo, refreshVoterInfo } = useAuth();
+  const { user, voterInfo, refreshVoterInfo, isChairperson } = useAuth();
   const { contract } = useWeb3();
   
   const [candidates, setCandidates] = useState([]);
@@ -63,13 +64,13 @@ const Vote = () => {
       // Verificar se pode votar
       if (!voterInfo?.hasRightToVote) {
         setError('Você não tem permissão para votar');
-        setTimeout(() => navigate('/voter'), 3000);
+        setTimeout(() => navigate(isChairperson ? '/admin' : '/voter'), 3000);
         return;
       }
       
       if (voterInfo?.hasVoted) {
         setError('Você já votou nesta eleição');
-        setTimeout(() => navigate('/voter'), 3000);
+        setTimeout(() => navigate(isChairperson ? '/admin' : '/voter'), 3000);
         return;
       }
     } catch (err) {
@@ -171,6 +172,15 @@ const Vote = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ py: 4 }}>
+        <Button
+          variant="text"
+          startIcon={<BackIcon />}
+          onClick={() => navigate(isChairperson ? '/admin' : '/voter')}
+          sx={{ mb: 2 }}
+        >
+          Voltar ao Dashboard
+        </Button>
+
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Votação
         </Typography>
@@ -247,7 +257,7 @@ const Vote = () => {
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
             <Button
               variant="outlined"
-              onClick={() => navigate('/voter')}
+              onClick={() => navigate(isChairperson ? '/admin' : '/voter')}
               disabled={isVoting}
             >
               Cancelar

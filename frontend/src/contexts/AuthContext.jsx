@@ -31,16 +31,16 @@ export const AuthProvider = ({ children }) => {
             setUserType(USER_TYPES.CHAIRPERSON);
           } else {
             setUserType(USER_TYPES.VOTER);
-            
-            // Buscar informações do eleitor
-            const info = await contract.voters(account);
-            setVoterInfo({
-              hasRightToVote: info.hasRightToVote,
-              hasVoted: info.isVoted,
-              vote: info.vote,
-              address: account
-            });
           }
+          
+          // Buscar informações do eleitor para TODOS os usuários (incluindo chairperson)
+          const info = await contract.voters(account);
+          setVoterInfo({
+            hasRightToVote: info.hasRightToVote,
+            hasVoted: info.isVoted,
+            vote: info.vote,
+            address: account
+          });
           
           setUser({
             address: account,
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     isChairperson: userType === USER_TYPES.CHAIRPERSON,
     isVoter: userType === USER_TYPES.VOTER,
     refreshVoterInfo: async () => {
-      if (account && contract && userType === USER_TYPES.VOTER) {
+      if (account && contract) {
         try {
           const info = await contract.voters(account);
           setVoterInfo({

@@ -19,6 +19,10 @@ import {
   Collapse,
   List,
   ListItem,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -42,6 +46,7 @@ const BlockchainMonitor = () => {
   const [filterEmpty, setFilterEmpty] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [expandedBlocks, setExpandedBlocks] = useState({});
+  const [blocksToLoad, setBlocksToLoad] = useState(100); // Padrão de 100 blocos
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -59,7 +64,7 @@ const BlockchainMonitor = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [autoRefresh, filterEmpty]);
+  }, [autoRefresh, filterEmpty, blocksToLoad]);
 
   const loadRecentBlocks = async (showLoading = true) => {
     try {
@@ -67,8 +72,12 @@ const BlockchainMonitor = () => {
       setError('');
 
       const currentBlockNumber = await provider.getBlockNumber();
-      const blocksToLoad = 20; // Carregar últimos 20 blocos
       const blockPromises = [];
+
+      // Mostrar progresso para carregamentos grandes
+      if (showLoading && blocksToLoad >= 100) {
+        console.log(`Carregando últimos ${blocksToLoad} blocos...`);
+      }
 
       for (let i = 0; i < blocksToLoad; i++) {
         const blockNumber = currentBlockNumber - i;
@@ -77,14 +86,34 @@ const BlockchainMonitor = () => {
         }
       }
 
-      const loadedBlocks = await Promise.all(blockPromises);
+      // Processar em lotes para melhor performance
+      const batchSize = 20;
+      const loadedBlocks = [];
+      
+      for (let i = 0; i < blockPromises.length; i += batchSize) {
+        const batch = blockPromises.slice(i, i + batchSize);
+        const batchResults = await Promise.all(batch);
+        loadedBlocks.push(...batchResults);
+        
+        // Atualizar progresso para carregamentos grandes
+        if (showLoading && blocksToLoad >= 100) {
+          const progress = Math.floor((i + batchSize) / blockPromises.length * 100);
+          console.log(`Progresso: ${progress}%`);
+        }
+      }
       
       // Filtrar blocos vazios se necessário
       const filteredBlocks = filterEmpty 
-        ? loadedBlocks.filter(block => block.votes.length > 0)
-        : loadedBlocks;
+        ? loadedBlocks.filter(block => block && block.votes.length > 0)
+        : loadedBlocks.filter(block => block !== null);
 
       setBlocks(filteredBlocks);
+
+      // Informar estatísticas
+      if (filterEmpty && showLoading) {
+        const blocksWithVotes = filteredBlocks.length;
+        console.log(`Encontrados ${blocksWithVotes} blocos com votos dos últimos ${blocksToLoad} blocos.`);
+      }
 
     } catch (err) {
       console.error('Erro ao carregar blocos:', err);
@@ -147,11 +176,20 @@ const BlockchainMonitor = () => {
     loadRecentBlocks();
   };
 
+  const handleBlocksToLoadChange = (event) => {
+    setBlocksToLoad(event.target.value);
+  };
+
   if (isLoading && blocks.length === 0) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8 }}>
           <CircularProgress />
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            {blocksToLoad >= 100 
+              ? `Carregando últimos ${blocksToLoad} blocos... Isso pode levar alguns momentos.`
+              : 'Carregando blocos...'}
+          </Typography>
         </Box>
       </Container>
     );
@@ -182,7 +220,23 @@ const BlockchainMonitor = () => {
         {/* Controles */}
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Blocos para carregar</InputLabel>
+                <Select
+                  value={blocksToLoad}
+                  onChange={handleBlocksToLoadChange}
+                  label="Blocos para carregar"
+                >
+                  <MenuItem value={20}>Últimos 20 blocos</MenuItem>
+                  <MenuItem value={50}>Últimos 50 blocos</MenuItem>
+                  <MenuItem value={100}>Últimos 100 blocos</MenuItem>
+                  <MenuItem value={500}>Últimos 500 blocos</MenuItem>
+                  <MenuItem value={1000}>Últimos 1000 blocos</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
               <FormControlLabel
                 control={
                   <Switch
@@ -190,10 +244,10 @@ const BlockchainMonitor = () => {
                     onChange={(e) => setFilterEmpty(e.target.checked)}
                   />
                 }
-                label="Mostrar apenas blocos com votos"
+                label="Apenas blocos com votos"
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <FormControlLabel
                 control={
                   <Switch
@@ -204,7 +258,7 @@ const BlockchainMonitor = () => {
                 label="Atualização automática"
               />
             </Grid>
-            <Grid item xs={12} md={4} textAlign="right">
+            <Grid item xs={12} md={3} textAlign="right">
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
@@ -215,6 +269,15 @@ const BlockchainMonitor = () => {
               </Button>
             </Grid>
           </Grid>
+          
+          {/* Estatísticas */}
+          {filterEmpty && blocks.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Mostrando {blocks.length} blocos com votos dos últimos {blocksToLoad} blocos analisados
+              </Typography>
+            </Box>
+          )}
         </Paper>
 
         {/* Lista de Blocos */}
@@ -333,7 +396,7 @@ const BlockchainMonitor = () => {
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="body1" color="text.secondary">
                 {filterEmpty 
-                  ? 'Nenhum bloco com votos encontrado nos últimos 20 blocos.'
+                  ? `Nenhum bloco com votos encontrado nos últimos ${blocksToLoad} blocos.`
                   : 'Nenhum bloco encontrado.'}
               </Typography>
             </Box>
