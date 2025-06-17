@@ -1,218 +1,166 @@
-# Sistema de Votação Baseado em Blockchain
+# Sistema de Votação Blockchain
 
-Sistema de votação eletrônica descentralizado utilizando tecnologia blockchain, proporcionando transparência e segurança no processo eleitoral.
+Um sistema de votação eletrônica seguro e transparente baseado em tecnologia blockchain, desenvolvido com contratos inteligentes Ethereum e rede Proof of Authority (PoA).
 
 ## Visão Geral
 
-Este projeto implementa um sistema de votação em blockchain que permite:
-- Criação de eleições com múltiplos candidatos
-- Gerenciamento de eleitores com direitos de voto controlados
-- Votação segura e transparente
-- Contagem automática de votos
-- Verificação do vencedor
+Este projeto implementa uma solução completa de votação digital que utiliza blockchain para garantir **imutabilidade**, **integridade** e **transparência** no processo eleitoral. O sistema elimina a necessidade de confiança em autoridades centrais, permitindo que qualquer participante possa verificar independentemente a validade dos resultados.
 
-## Estrutura do Projeto
+## Arquitetura do Sistema
+
+O projeto está estruturado em três componentes principais:
 
 ```
-blockchain/
-├── contracts/               # Smart contracts Solidity
-│   ├── Ballot.sol           # Contrato principal de votação
-│   └── Lock.sol             # Contrato de exemplo do Hardhat
-├── scripts/                 # Scripts de deploy
-├── test/                    # Testes automatizados
-├── hardhat.config.js        # Configuração do Hardhat
-└── poa-network/             # Arquivos da rede PoA
-    ├── genesis.json         # Configuração inicial da blockchain
-    ├── validator1/          # Dados do primeiro validador
-    ├── validator2/          # Dados do segundo validador
-    ├── validator3/          # Dados do terceiro validador
-    ├── validator4/          # Dados do quarto validador
-    ├── validator5/          # Dados do quinto validador
-    ├── start-validators.sh  # Inicia os validadores da rede
-    ├── stop-validators.sh   # Para os validadores de forma limpa
-    ├── monitor-poa.sh       # Monitora o estado da rede PoA
-    └── check-validators.sh  # Verifica quais validadores produziram quais blocos
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │ ←→ │  Blockchain     │ ←→ │  PoA Network    │
+│  Interface Web  │    │ Smart Contracts │    │   Infraestrutura│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## Contrato de Votação Implementado
+### Blockchain - Núcleo de Votação
+- **Smart Contract em Solidity** para lógica de votação
+- **Imutabilidade garantida** - votos registrados permanentemente
+- **Validações automáticas** - prevenção de fraudes e votos duplicados
+- **Transparência total** - todos os registros são auditáveis
+- **Controle de acesso** - apenas eleitores autorizados podem votar
 
-O sistema é baseado no contrato inteligente `Ballot.sol`, que implementa:
+### PoA Network - Infraestrutura Confiável
+- **Rede privada Proof of Authority** com 5 validadores
+- **Consenso controlado** - validadores conhecidos e confiáveis
+- **Performance otimizada** - blocos a cada 15 segundos
+- **Ambiente controlado** - ideal para votações institucionais
+- **Custos previsíveis** - sem flutuações de gas fees
 
-- **Estrutura de Dados**:
-  - `Voter`: Armazena informações do eleitor (direito a voto, status de votação, etc.)
-  - `Proposal`: Representa um candidato/proposta com nome e contagem de votos
+### Frontend - Interface do Usuário
+- **Interface web intuitiva** desenvolvida em React
+- **Dashboards diferenciados** para eleitores e administradores
+- **Integração direta** com blockchain via Ethers.js
+- **Verificação de votos** em tempo real
+- **Monitoramento** da rede e transações
 
-- **Principais Funcionalidades**:
-  - Criação de eleição com lista de candidatos
-  - Sistema de permissões controlado por um administrador (`chairPerson`)
-  - Concessão de direito de voto a endereços específicos
-  - Registro de votos com validação
-  - Cálculo automático do vencedor
-  - Emissão de eventos para auditoria (`VoteCast`)
+## Garantias de Segurança
 
-- **Mecanismos de Segurança**:
-  - Validação de permissões de voto
-  - Prevenção contra votos duplicados
-  - Validação de candidatos
+### **Imutabilidade**
+- Votos registrados na blockchain **não podem ser alterados ou removidos**
+- Histórico completo preservado permanentemente
+- Impossibilidade de manipulação retroativa de resultados
 
-## Tecnologias Utilizadas
+### **Integridade** 
+- **Validação automática** de cada voto através de smart contracts
+- Prevenção de votos duplicados por eleitor
+- Verificação de permissões antes de cada votação
+- Contabilização automática e transparente
 
-- **Blockchain**: Ethereum, simulado com Ganache para desenvolvimento local para testes iniciais, e posteriormente Go-Ethereum (Geth) em rede PoA 
-- **Framework de Desenvolvimento**: Hardhat para compilação, testes e deploy
-- **Linguagem de Contratos**: Solidity 0.8.x
-- **Testes**: Mocha e Chai para testes automatizados
-- **Frontend** (planejado): React.js
-- **Integração Blockchain**: Ethers.js para interação com a blockchain
+### **Transparência**
+- **Código aberto** - contratos e lógica totalmente auditáveis
+- Todos os votos são **publicamente verificáveis**
+- Rastreabilidade completa através de eventos blockchain
+- Resultados calculados automaticamente sem intervenção humana
 
-## Rede PoA (Proof of Authority)
-O sistema utiliza uma rede Ethereum PoA para garantir eficiência e controle no processo de votação:
+### **Auditabilidade**
+- Cada voto gera um **registro permanente** na blockchain
+- Eleitores podem **verificar independentemente** seu próprio voto
+- Observadores podem auditar todo o processo em tempo real
+- Hash criptográfico garante integridade dos dados
 
-   - Arquitetura: 5 nós validadores em uma rede privada
-   - Consenso: Clique PoA (blocos a cada 15 segundos)
-   - Validação: Apenas nós autorizados podem validar transações
-   - Gerenciamento: Sistema de rotação de validadores
+## Funcionalidades Principais
 
-## Testes Implementados
+### Para Eleitores
+- **Login seguro** com chave privada
+- **Votação intuitiva** com interface amigável
+- **Verificação de voto** com prova blockchain
+- **Acompanhamento** de resultados em tempo real
 
-O sistema inclui testes abrangentes que cobrem:
+### Para Administradores
+- **Gestão de permissões** de voto
+- **Controle da eleição** (pausar/retomar)
+- **Monitoramento** da rede blockchain
+- **Deploy de novas eleições**
+- **Análise de estatísticas** em tempo real
 
-1. **Testes de Implantação**:
-   - Verificação de inicialização correta dos candidatos
-   - Validação das configurações iniciais do contrato
+### Para Auditores
+- **Inspeção completa** da blockchain
+- **Verificação independente** de todos os votos
+- **Análise de blocos** e transações
+- **Validação** da integridade do processo
 
-2. **Testes de Segurança**:
-   - Permissões do administrador (chairPerson)
-   - Mecanismos de controle de acesso ao voto
+## Estrutura do Repositório
 
-3. **Testes Funcionais**:
-   - Registro e validação de votos
-   - Cálculo correto do vencedor
-   - Emissão de eventos durante votação
-
-4. **Testes de Falha**:
-   - Tentativas de voto sem permissão
-   - Tentativas de voto duplicado
-   - Tentativas de voto em candidato inválido
-
-## Como Executar (Desenvolvimento)
-
-## Comandos Hardhat Básicos
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
+```
+📦 sistema-votacao-blockchain/
+├── 📂 blockchain/           # Smart contracts e scripts de interação
+│   ├── contracts/          # Contratos Solidity
+│   ├── scripts/            # Deploy, interação e monitoramento
+│   └── test/              # Testes automatizados
+├── 📂 poa-network/         # Infraestrutura da rede PoA
+│   ├── genesis.json       # Configuração inicial da rede
+│   └── scripts/           # Gerenciamento de validadores
+└── 📂 frontend/            # Interface web React
+    ├── src/pages/         # Páginas da aplicação
+    ├── src/components/    # Componentes reutilizáveis
+    └── src/services/      # Serviços de integração
 ```
 
-## Comandos Hardhat Básicos e teste simples via Ganache
+## Stack Tecnológico
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/Fauser77/voting-system
-   cd sistema-votacao-blockchain
-   ```
+### Blockchain
+- **Solidity** - Linguagem dos smart contracts
+- **Hardhat** - Framework de desenvolvimento
+- **Ethers.js** - Biblioteca de integração Web3
 
-2. Instale as dependências:
-   ```bash
-   cd blockchain
-   npm install
-   ```
+### Infraestrutura
+- **Geth** - Cliente Ethereum
+- **Clique PoA** - Algoritmo de consenso
 
-3. Inicie o Ganache (interface gráfica ou CLI):
-   ```bash
-   # Via CLI
-   npx ganache-cli
-   
-   # Ou abra a aplicação Ganache GUI
-   ```
+### Frontend
+- **React 18** - Framework de interface
+- **Material-UI** - Biblioteca de componentes
+- **Context API** - Gerenciamento de estado
+- **MUI Charts** - Visualização de dados
 
-4. Compile os contratos:
-   ```bash
-   npx hardhat compile
-   ```
+## Casos de Uso
 
-5. Execute os testes:
-   ```bash
-   npx hardhat test
-   ```
+- **Eleições corporativas** - Votações em empresas e organizações
+- **Processos acadêmicos** - Eleições estudantis e universitárias
+- **Decisões comunitárias** - Votações em associações e cooperativas
+- **Consultas públicas** - Decisões participativas em governos locais
+- **Proof of Concept** - Demonstração de votação blockchain
 
-6. Faça o deploy no Ganache:
-   ```bash
-   npx hardhat run scripts/deploy.js --network ganache
-   ```
+## Vantagens da Solução
 
-## Rede PoA (Proof of Authority)
+### **Versus Votação Tradicional**
+- **Impossibilidade de fraude** - validação automática
+- **Contagem instantânea** - resultados em tempo real
+- **Auditoria permanente** - registros imutáveis
+- **Transparência total** - processo público e verificável
 
-Este projeto implementa uma rede blockchain privada baseada no consenso Proof of Authority (PoA), onde um conjunto de validadores pré-definidos são responsáveis pela produção de blocos.
+### **Versus Sistemas Centralizados**
+- **Descentralização** - sem ponto único de falha
+- **Independência** - sem necessidade de confiança em terceiros
+- **Verificabilidade** - qualquer um pode auditar
+- **Resistência a censura** - impossível bloquear votos válidos
 
-### Configuração da Rede PoA
+## Aspectos Técnicos Avançados
 
-1. Certifique-se que o Geth está instalado no sistema:
-```shell
-geth version
-```
+### **Consensus Mechanism**
+A rede PoA utiliza o algoritmo **Clique** com 5 validadores pré-autorizados, garantindo finalidade determinística e blocos regulares a cada 15 segundos.
 
-2. Navegue até a pasta poa-network:
-```shell
-cd poa-network
-```
+### **Event-Driven Architecture**
+O sistema utiliza eventos blockchain (`VoteCast`) para rastreabilidade completa, permitindo reconstrução do histórico de votação e auditoria independente.
 
-3. Inicie a rede PoA com os validadores:
-```shell
-./start-validators.sh
-```
+### **Cryptographic Proof**
+Cada voto é protegido por hash criptográfico SHA-256, garantindo que qualquer tentativa de alteração seja imediatamente detectável.
 
-Este script iniciará 5 validadores que formarão a rede PoA. Cada validador executa uma instância do Geth configurada para participar do consenso PoA.
+## Documentação Adicional
 
-### Monitoramento da Rede
+- [`blockchain/README.md`](./blockchain/README.md) - Detalhes dos smart contracts e scripts
+- [`poa-network/README.md`](./poa-network/README.md) - Configuração e gerenciamento da rede
+- [`frontend/README.md`](./frontend/README.md) - Interface web e funcionalidades
 
-Para verificar o estado atual da rede PoA:
+## Contribuição
 
-```shell
-./monitor-poa.sh
-```
+Este projeto demonstra a aplicação prática de blockchain em processos democráticos, combinando **segurança**, **transparência** e **usabilidade** em uma solução completa de votação digital.
 
-Este comando mostrará:
-- Status de cada validador
-- Número de peers conectados
-- Bloco atual
-- Status de mineração
-- Taxa de produção de blocos
+---
 
-### Verificação de Validadores
-
-Para verificar quais validadores produziram quais blocos:
-
-```shell
-./check-validators.sh
-```
-
-Isso mostrará um histórico dos blocos recentes e quais validadores foram responsáveis por produzi-los.
-
-### Parando a Rede PoA
-
-Para encerrar a rede de forma limpa:
-
-```shell
-./stop-validators.sh
-```
-
-## Observações sobre o Consenso PoA
-
-No consenso PoA implementado (algoritmo Clique do Geth):
-
-1. Os validadores se revezam para produzir blocos em uma ordem determinística
-2. O campo `miner` dos blocos pode mostrar o endereço zero (`0x0000000000000000000000000000000000000000`)
-3. Para identificar qual validador produziu um bloco específico, use o comando `clique.getSnapshot().recents`
-4. O parâmetro `period` no genesis.json determina o intervalo mínimo entre blocos (atualmente configurado para 30 segundos)
-
-## Contrato de Votação
-
-O contrato `Ballot.sol` implementa um sistema de votação com as seguintes funcionalidades:
-
-- Cadastro de candidatos no momento do deploy
-- Administração de direitos de voto
-- Votação segura (apenas eleitores autorizados)
-- Contagem de votos e determinação do vencedor
+**⚡ Blockchain + PoA + React = Votação Digital Segura e Transparente**

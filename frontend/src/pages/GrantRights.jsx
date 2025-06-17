@@ -82,10 +82,10 @@ const GrantRights = () => {
         timestamp: new Date(),
         txHash: receipt.transactionHash,
         blockNumber: receipt.blockNumber
-      }, ...prev].slice(0, 5)); // Manter apenas as 5 últimas
+      }, ...prev].slice(0, 5)); 
 
       setSuccess(`Direito de voto concedido com sucesso para ${voterAddress}`);
-      setVoterAddress(''); // Limpar campo
+      setVoterAddress(''); 
 
     } catch (err) {
       console.error('Erro ao conceder direitos:', err);

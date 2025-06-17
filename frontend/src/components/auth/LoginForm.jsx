@@ -14,7 +14,7 @@ import {
 import { Login as LoginIcon } from '@mui/icons-material';
 import { useWeb3 } from '../../contexts/Web3Context';
 
-// Chaves privadas para desenvolvimento (APENAS PARA TESTES!)
+// Chaves privadas para desenvolvimento (APENAS PARA TESTES)
 const TEST_ACCOUNTS = {
   chairperson: {
     address: '0x694879a40d1aB5D721f629F95a31b89c157CF712',
@@ -35,6 +35,26 @@ const TEST_ACCOUNTS = {
   voter4: {
     address: '0x008236356cc7c1a9F435f3F828434932437990d1',
     privateKey: '0x062860eca5db48e22d3dbccc85f698f5c052d17379176e16300a3a937fa27813'
+  },
+  voter5: {
+    address: '0x703177243768e3bfd707C4dfe915717F10aaD69d',
+    privateKey: '0x6bb9fd888bc8c620da49fbbfea6a5ca97d6efea7aa1dfab595ddfdfa5a2c5f1c'
+  },
+  voter6: {
+    address: '0x8dada891413d4a04d47351221955d7077C0Da34D',
+    privateKey: '0xf21d37aed7f7093fc269fcc977b0805eba2a22eb84c0a5bb29dfbf404c8dc1cf'
+  },
+  voter7: {
+    address: '0x5d54e97A38991398E5B9aC524554101F6BEFBB0B',
+    privateKey: '0xa83850320f84027ded855da172f7a184f499b38156173c51469d99011f2bcfbc'
+  },
+  voter8: {
+    address: '0x48616dFA5847b26AfF853d13e1904DD59844D521',
+    privateKey: '0xbd2279f1231aef89a95114365389d7865d23df82b7627d55aae8f932925d3272'
+  },
+  voter9: {
+    address: '0xe2f31711514CD397DFbf3Abb61fcA17f23F81Ab4',
+    privateKey: '0xb1f35adfbbc6db40cf95cfbc90ba98ac4cd0d7e2c2196ec5d797a92a1a4932fb'
   }
 };
 
@@ -99,6 +119,11 @@ const LoginForm = ({ onError }) => {
               <MenuItem value="voter2">Eleitor 2</MenuItem>
               <MenuItem value="voter3">Eleitor 3</MenuItem>
               <MenuItem value="voter4">Eleitor 4</MenuItem>
+              <MenuItem value="voter5">Eleitor 5</MenuItem>
+              <MenuItem value="voter6">Eleitor 6</MenuItem>
+              <MenuItem value="voter7">Eleitor 7</MenuItem>
+              <MenuItem value="voter8">Eleitor 8</MenuItem>
+              <MenuItem value="voter9">Eleitor 9</MenuItem>
             </Select>
           </FormControl>
 
@@ -145,10 +170,6 @@ const LoginForm = ({ onError }) => {
       >
         {isLoading ? 'Conectando...' : 'Entrar'}
       </Button>
-
-      <Typography variant="caption" display="block" sx={{ mt: 2 }} color="text.secondary">
-        Nota: Em produção, usar uma solução de wallet segura como MetaMask
-      </Typography>
     </Box>
   );
 };

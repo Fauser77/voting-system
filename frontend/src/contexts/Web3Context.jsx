@@ -38,7 +38,7 @@ export const Web3Provider = ({ children }) => {
       setProvider(localProvider);
       setNetworkId(network.chainId.toString());
 
-      // Criar instância do contrato (read-only por enquanto)
+      // Criar instância do contrato
       const ballotContract = new ethers.Contract(
         CONTRACT_ADDRESS,
         BALLOT_ABI,

@@ -46,7 +46,7 @@ const VoterDashboard = () => {
     if (user && contract) {
       loadData();
     }
-  }, [user, contract]); // Removido refreshVoterInfo das dependências
+  }, [user, contract]); 
 
   const handleVoteClick = () => {
     if (!voterInfo?.hasRightToVote) {
