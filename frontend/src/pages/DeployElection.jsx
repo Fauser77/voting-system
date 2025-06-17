@@ -22,6 +22,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Snackbar,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -34,6 +35,7 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { deployService } from '../services/deployService';
 import { CONTRACT_ADDRESS } from '../utils/constants';
 
+
 const DeployElection = () => {
   const navigate = useNavigate();
   const { signer, provider } = useWeb3();
@@ -44,6 +46,8 @@ const DeployElection = () => {
   const [success, setSuccess] = useState('');
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [deployedContract, setDeployedContract] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
 
   const handleCandidateChange = (index, value) => {
     const newCandidates = [...candidates];
@@ -145,6 +149,30 @@ const DeployElection = () => {
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Criar Nova Eleição
         </Typography>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+          <Button
+            variant="outlined"
+            color="warning"
+            onClick={() => {
+              deployService.clearDeployedContract();
+              setSnackbarOpen(true);
+            }}
+          >
+            Ignorar eleição anterior
+          </Button>
+        </Box>
+
+        {/* Feedback visual */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarOpen(false)}
+        >
+          <Alert severity="info" onClose={() => setSnackbarOpen(false)}>
+            Dados da eleição anterior removidos. Você pode criar uma nova.
+          </Alert>
+        </Snackbar>
 
         <Paper elevation={3} sx={{ p: 4, mb: 3 }}>
           <Typography variant="h6" gutterBottom>
