@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
@@ -15,6 +16,7 @@ import Results from './pages/Results';
 import VerifyVote from './pages/VerifyVote';
 import GrantRights from './pages/GrantRights';
 import BlockchainMonitor from './pages/BlockchainMonitor';
+import DeployElection from './pages/DeployElection';
 
 // Componentes
 import Header from './components/common/Header';
@@ -119,6 +121,14 @@ function App() {
                   <ProtectedRoute requireAuth requireChairperson>
                     <Layout>
                       <BlockchainMonitor />
+                    </Layout>
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/admin/deploy-election" element={
+                  <ProtectedRoute requireAuth requireChairperson>
+                    <Layout>
+                      <DeployElection />
                     </Layout>
                   </ProtectedRoute>
                 } />

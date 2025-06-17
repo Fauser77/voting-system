@@ -16,6 +16,9 @@ contract Ballot {
 
     // Endereço do administrador da votação
     address public chairPerson;
+    
+    // Estado da votação (pausado/ativo)
+    bool public votingPaused;
 
     // Mapeamento de endereços para eleitores
     mapping(address => Voter) public voters;
@@ -24,13 +27,22 @@ contract Ballot {
     Proposal[] public proposals;
 
     event VoteCast(uint indexed blockNumber, string candidateName);
+    event VotingPaused();
+    event VotingResumed();
 
     modifier onlyChairPerson() {
         require(msg.sender == chairPerson, "Apenas o administrador pode executar esta funcao");
         _;
     }
+    
+    modifier whenNotPaused() {
+        require(!votingPaused, "A votacao esta pausada");
+        _;
+    }
+    
     constructor(string[] memory candidateNames) {
         chairPerson = msg.sender;
+        votingPaused = false; // Votação inicia ativa
         
         // Inicializa o array de propostas com os nomes dos candidatos
         for (uint i = 0; i < candidateNames.length; i++) {
@@ -53,7 +65,7 @@ contract Ballot {
     }
 
     // Função para votar em uma proposta
-    function vote(uint8 toProposal) public {
+    function vote(uint8 toProposal) public whenNotPaused {
         Voter storage sender = voters[msg.sender];
         
         require(!sender.isVoted, "Voce ja votou");
@@ -104,5 +116,24 @@ contract Ballot {
         require(index < proposals.length, "Candidato nao existe");
         Proposal storage proposal = proposals[index];
         return (proposal.name, proposal.voteCount);
+    }
+    
+    // Função para pausar a votação
+    function pauseVoting() public onlyChairPerson {
+        require(!votingPaused, "A votacao ja esta pausada");
+        votingPaused = true;
+        emit VotingPaused();
+    }
+    
+    // Função para retomar a votação
+    function resumeVoting() public onlyChairPerson {
+        require(votingPaused, "A votacao nao esta pausada");
+        votingPaused = false;
+        emit VotingResumed();
+    }
+    
+    // Função para verificar se a votação está pausada
+    function isVotingPaused() public view returns (bool) {
+        return votingPaused;
     }
 }

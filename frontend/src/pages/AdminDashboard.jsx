@@ -1,3 +1,4 @@
+// frontend/src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +14,8 @@ import {
   Divider,
   Card,
   CardContent,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   HowToVote as VoteIcon,
@@ -24,6 +27,9 @@ import {
   PersonAdd as PersonAddIcon,
   Monitor as MonitorIcon,
   AdminPanelSettings as AdminIcon,
+  Ballot as BallotIcon,
+  Pause as PauseIcon,
+  PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeb3 } from '../contexts/Web3Context';
@@ -40,6 +46,8 @@ const AdminDashboard = () => {
     totalVotes: 0,
     totalCandidates: 0
   });
+  const [votingPaused, setVotingPaused] = useState(false);
+  const [isPausingResuming, setIsPausingResuming] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +55,7 @@ const AdminDashboard = () => {
         setIsLoading(true);
         await refreshVoterInfo();
         await loadStats();
+        await checkVotingStatus();
       } catch (err) {
         setError('Erro ao carregar informações');
         console.error(err);
@@ -59,6 +68,16 @@ const AdminDashboard = () => {
       loadData();
     }
   }, [user, contract]);
+
+  const checkVotingStatus = async () => {
+    try {
+      if (!contract) return;
+      const isPaused = await votingService.isVotingPaused(contract);
+      setVotingPaused(isPaused);
+    } catch (error) {
+      console.error('Erro ao verificar status da votação:', error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -111,6 +130,33 @@ const AdminDashboard = () => {
     navigate('/admin/monitor');
   };
 
+  const handleDeployClick = () => {
+    navigate('/admin/deploy-election');
+  };
+
+  const handlePauseResume = async () => {
+    setIsPausingResuming(true);
+    setError('');
+    
+    try {
+      if (votingPaused) {
+        await votingService.resumeVoting(contract);
+        setVotingPaused(false);
+        setError(''); // Clear any errors
+        // Show success message
+        setTimeout(() => setError(''), 3000);
+      } else {
+        await votingService.pauseVoting(contract);
+        setVotingPaused(true);
+        setError(''); // Clear any errors
+      }
+    } catch (err) {
+      setError(err.message || 'Erro ao alterar status da votação');
+    } finally {
+      setIsPausingResuming(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     if (status === true) return 'success';
     if (status === false) return 'error';
@@ -151,7 +197,7 @@ const AdminDashboard = () => {
 
         {/* Estatísticas Administrativas */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -163,7 +209,7 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -175,7 +221,7 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
             <Card>
               <CardContent sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -187,6 +233,43 @@ const AdminDashboard = () => {
                 <Typography variant="caption" color="text.secondary">
                   votos computados
                 </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card sx={{ 
+              bgcolor: votingPaused ? 'error.light' : 'success.light',
+              color: 'white'
+            }}>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" gutterBottom>
+                  Status da Votação
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  {votingPaused ? <PauseIcon sx={{ fontSize: 40 }} /> : <PlayIcon sx={{ fontSize: 40 }} />}
+                  <Typography variant="h5">
+                    {votingPaused ? 'PAUSADA' : 'ATIVA'}
+                  </Typography>
+                </Box>
+                <Tooltip title={votingPaused ? 'Retomar votação' : 'Pausar votação'}>
+                  <IconButton
+                    onClick={handlePauseResume}
+                    disabled={isPausingResuming}
+                    sx={{ 
+                      mt: 1, 
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+                    }}
+                  >
+                    {isPausingResuming ? (
+                      <CircularProgress size={24} sx={{ color: 'white' }} />
+                    ) : votingPaused ? (
+                      <PlayIcon sx={{ color: 'white' }} />
+                    ) : (
+                      <PauseIcon sx={{ color: 'white' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
               </CardContent>
             </Card>
           </Grid>
@@ -331,7 +414,7 @@ const AdminDashboard = () => {
               <Divider sx={{ my: 2 }} />
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Button
                     fullWidth
                     variant="contained"
@@ -348,7 +431,7 @@ const AdminDashboard = () => {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <Button
                     fullWidth
                     variant="contained"
@@ -362,6 +445,23 @@ const AdminDashboard = () => {
                   </Button>
                   <Typography variant="caption" display="block" sx={{ mt: 1 }} align="center">
                     Acompanhar blocos e transações em tempo real
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    color="warning"
+                    startIcon={<BallotIcon />}
+                    onClick={handleDeployClick}
+                    sx={{ py: 2 }}
+                  >
+                    Nova Eleição
+                  </Button>
+                  <Typography variant="caption" display="block" sx={{ mt: 1 }} align="center">
+                    Criar e configurar uma nova eleição
                   </Typography>
                 </Grid>
               </Grid>

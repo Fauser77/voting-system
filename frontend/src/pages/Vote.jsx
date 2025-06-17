@@ -40,7 +40,7 @@ const Vote = () => {
   const navigate = useNavigate();
   const { user, voterInfo, refreshVoterInfo, isChairperson } = useAuth();
   const { contract } = useWeb3();
-  
+
   const [candidates, setCandidates] = useState([]);
   const [selectedCandidate, setSelectedCandidate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -49,25 +49,42 @@ const Vote = () => {
   const [success, setSuccess] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [votingPaused, setVotingPaused] = useState(false);
 
   const steps = ['Selecionar Candidato', 'Confirmar Voto', 'Voto Registrado'];
 
   useEffect(() => {
     loadCandidates();
     checkVoterStatus();
+    checkVotingStatus();
   }, [contract]);
+
+  const checkVotingStatus = async () => {
+    try {
+      if (!contract) return;
+      const isPaused = await votingService.isVotingPaused(contract);
+      setVotingPaused(isPaused);
+      
+      if (isPaused) {
+        setError(''); // Limpar erro anterior
+        // Não mostrar erro aqui, apenas atualizar o estado
+        // O aviso será mostrado no Alert dentro do componente
+      }
+    } catch (err) {
+      console.error('Erro ao verificar status da votação:', err);
+    }
+  };
 
   const checkVoterStatus = async () => {
     try {
       await refreshVoterInfo();
-      
-      // Verificar se pode votar
+
       if (!voterInfo?.hasRightToVote) {
         setError('Você não tem permissão para votar');
         setTimeout(() => navigate(isChairperson ? '/admin' : '/voter'), 3000);
         return;
       }
-      
+
       if (voterInfo?.hasVoted) {
         setError('Você já votou nesta eleição');
         setTimeout(() => navigate(isChairperson ? '/admin' : '/voter'), 3000);
@@ -97,6 +114,13 @@ const Vote = () => {
       setError('Por favor, selecione um candidato');
       return;
     }
+    
+    // Verificar se a votação está pausada antes de abrir o dialog
+    if (votingPaused) {
+      setError('A votação está pausada no momento. Por favor, aguarde ser retomada.');
+      return;
+    }
+    
     setConfirmDialog(true);
   };
 
@@ -109,13 +133,12 @@ const Vote = () => {
     try {
       const candidateIndex = parseInt(selectedCandidate);
       const result = await votingService.vote(contract, candidateIndex);
-      
+
       if (result.success) {
         setSuccess(true);
         setActiveStep(2);
         await refreshVoterInfo();
-        
-        // Redirecionar após 5 segundos
+
         setTimeout(() => {
           navigate('/results');
         }, 5000);
@@ -124,7 +147,26 @@ const Vote = () => {
       }
     } catch (err) {
       console.error('Erro ao votar:', err);
-      setError(err.message || 'Erro ao registrar voto na blockchain');
+      // Tratamento específico para votação pausada
+      let errorMessage = 'Erro ao registrar voto na blockchain';
+      
+      if (err.message?.includes('A votacao esta pausada') || 
+          err.reason?.includes('A votacao esta pausada') ||
+          err.error?.message?.includes('A votacao esta pausada')) {
+        errorMessage = 'A votação está temporariamente pausada pelo administrador. Por favor, aguarde a votação ser retomada para registrar seu voto.';
+        setVotingPaused(true); // Atualizar o estado
+      } else if (err.message?.includes('Voce ja votou')) {
+        errorMessage = 'Você já registrou seu voto nesta eleição.';
+      } else if (err.message?.includes('Voce nao tem direito a voto')) {
+        errorMessage = 'Você não tem permissão para votar. Entre em contato com o administrador.';
+      } else if (err.message?.includes('user rejected')) {
+        errorMessage = 'Transação cancelada pelo usuário.';
+      } else {
+        // Para outros erros, tentar extrair uma mensagem mais clara
+        errorMessage = err.reason || err.message || 'Erro ao registrar voto. Por favor, tente novamente.';
+      }
+      
+      setError(errorMessage);
       setActiveStep(0);
     } finally {
       setIsVoting(false);
@@ -282,7 +324,6 @@ const Vote = () => {
           </Box>
         </Paper>
 
-        {/* Dialog de Confirmação */}
         <Dialog
           open={confirmDialog}
           onClose={() => setConfirmDialog(false)}

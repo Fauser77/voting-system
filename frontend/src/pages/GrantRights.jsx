@@ -54,7 +54,7 @@ const GrantRights = () => {
     }
 
     if (!validateAddress(voterAddress)) {
-      setError('Endereço inválido. Deve começar com 0x seguido de 40 caracteres hexadecimais');
+      setError('Endereço inválido.');
       return;
     }
 
