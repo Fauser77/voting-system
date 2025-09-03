@@ -116,10 +116,9 @@ const DeployElection = () => {
         setDeployedContract(result);
         setSuccess(`Eleição criada com sucesso! Endereço do contrato: ${result.contractAddress}`);
         
-        // Aguardar um pouco e redirecionar
+        
         setTimeout(() => {
-          // Aqui você precisaria atualizar o CONTRACT_ADDRESS no sistema
-          // Por enquanto, vamos apenas salvar no localStorage
+          
           localStorage.setItem('currentContractAddress', result.contractAddress);
           navigate('/admin');
         }, 3000);
