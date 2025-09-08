@@ -1,0 +1,86 @@
+{
+  "contractAddress": "0xa2801a716Dc309f512fB1E36026324051A0ff4ab",
+  "parameters": {
+    "p": "467",
+    "g": "2",
+    "h": "125"
+  },
+  "totalVotes": "3",
+  "votes": [
+    {
+      "index": 0,
+      "c1_candidate1": "465",
+      "c2_candidate1": "217",
+      "c1_candidate2": "465",
+      "c2_candidate2": "342",
+      "voter": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+      "timestamp": "1756931811",
+      "p": "467"
+    },
+    {
+      "index": 1,
+      "c1_candidate1": "142",
+      "c2_candidate1": "240",
+      "c1_candidate2": "142",
+      "c2_candidate2": "13",
+      "voter": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
+      "timestamp": "1756931826",
+      "p": "467"
+    },
+    {
+      "index": 2,
+      "c1_candidate1": "192",
+      "c2_candidate1": "386",
+      "c1_candidate2": "192",
+      "c2_candidate2": "193",
+      "voter": "0xfcb3A6a90A57148d038455EDE0f4d1c343548B43",
+      "timestamp": "1756931841",
+      "p": "467"
+    }
+  ],
+  "blockVotes": {
+    "1153": [
+      {
+        "blockNumber": 1153,
+        "txHash": "0x1f05e8b82f329e4d7e7636e256c7ddaf04908ac74fc385d40de1b8a33cce0762",
+        "from": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+        "gasUsed": "192920",
+        "timestamp": 1756931811,
+        "voter": "0xCD129025A28b10C61cDc210F58b8808A91038094",
+        "c1_candidate1": "465",
+        "c2_candidate1": "217",
+        "c1_candidate2": "465",
+        "c2_candidate2": "342"
+      }
+    ],
+    "1154": [
+      {
+        "blockNumber": 1154,
+        "txHash": "0x12808a5b13ae96a633380bc3b9abc46038f184a55d59f609b338a4f8cb82acf1",
+        "from": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
+        "gasUsed": "177884",
+        "timestamp": 1756931826,
+        "voter": "0xE8e478126502D53c3CeCD94FEb7Ce68893AAd645",
+        "c1_candidate1": "142",
+        "c2_candidate1": "240",
+        "c1_candidate2": "142",
+        "c2_candidate2": "13"
+      }
+    ],
+    "1155": [
+      {
+        "blockNumber": 1155,
+        "txHash": "0xee390615149b2670f646011f78d80abf7833d63b35041f12c9a6015daab1046c",
+        "from": "0xfcb3A6a90A57148d038455EDE0f4d1c343548B43",
+        "gasUsed": "177896",
+        "timestamp": 1756931841,
+        "voter": "0xfcb3A6a90A57148d038455EDE0f4d1c343548B43",
+        "c1_candidate1": "192",
+        "c2_candidate1": "386",
+        "c1_candidate2": "192",
+        "c2_candidate2": "193"
+      }
+    ]
+  },
+  "timestamp": "2025-09-03T20:43:21.900Z"
+}
