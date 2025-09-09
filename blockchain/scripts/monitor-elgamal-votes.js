@@ -20,6 +20,36 @@ function modPow(base, exponent, modulus) {
     }
     return result;
 }
+function modInverse(a, m) {
+    let m0 = m;
+    let x0 = 0n;
+    let x1 = 1n;
+    
+    if (m === 1n) return 0n;
+    
+    while (a > 1n) {
+        let q = a / m;
+        let t = m;
+        m = a % m;
+        a = t;
+        t = x0;
+        x0 = x1 - q * x0;
+        x1 = t;
+    }
+    
+    if (x1 < 0n) x1 += m0;
+    return x1;
+}
+
+function findVoteCount(g, target, p, maxVotes = 1000n) {
+    let current = 1n;
+    for (let i = 0n; i <= maxVotes; i++) {
+        if (current === target) return i;
+        current = (current * g) % p;
+    }
+    return null;
+}
+
 
 // ==================== FUNÇÕES DE ANÁLISE ====================
 

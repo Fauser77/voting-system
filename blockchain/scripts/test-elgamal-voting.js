@@ -7,9 +7,9 @@ const hre = require("hardhat");
 // ==================== CONFIGURAÇÕES ELGAMAL ====================
 // Usando valores pequenos para facilitar verificação manual
 const ELGAMAL_PARAMS = {
-    p: 467n,  // Primo pequeno (467 = primo)
-    g: 2n,    // Gerador
-    x: 123n,  // Chave privada do trustee (secreta!)
+    p: 2147483647n,  // Primo de Mersenne (2^31 - 1)
+    g: 3n,           // Gerador primitivo
+    x: 1234567890n,  // Chave privada maior
     // h será calculado: g^x mod p
 };
 
@@ -50,6 +50,74 @@ function modInverse(a, m) {
     if (x1 < 0n) x1 += m0;
     
     return x1;
+}
+
+// ==================== PROTOCOLO CHAUM-PEDERSEN ====================
+
+const crypto = require('crypto');
+
+function generateDecryptionProof(c1, c2, decryptedValue, x, g, h, p) {
+    console.log("\n  Gerando Prova Chaum-Pedersen...");
+    
+    // Gerar valor aleatório w
+    const w = BigInt('0x' + crypto.randomBytes(32).toString('hex')) % (p - 1n);
+    
+    // Calcular compromissos
+    const a = modPow(g, w, p);  // a = g^w
+    const b = modPow(c1, w, p); // b = c1^w
+    
+    // Calcular challenge (hash)
+    const challengeInput = `${c1},${c2},${decryptedValue},${a},${b}`;
+    const challengeHash = crypto.createHash('sha256').update(challengeInput).digest('hex');
+    const e = BigInt('0x' + challengeHash) % (p - 1n);
+    
+    // Calcular resposta
+    const s = (w + e * x) % (p - 1n);
+    
+    return {
+        commitment_a: a.toString(),
+        commitment_b: b.toString(),
+        challenge: e.toString(),
+        response: s.toString(),
+        decrypted_value: decryptedValue.toString()
+    };
+}
+
+function verifyDecryptionProof(c1, c2, proof, g, h, p) {
+    console.log("  Verificando prova...");
+    
+    const a = BigInt(proof.commitment_a);
+    const b = BigInt(proof.commitment_b);
+    const e = BigInt(proof.challenge);
+    const s = BigInt(proof.response);
+    const m = BigInt(proof.decrypted_value);
+    
+    // Recalcular o challenge
+    const challengeInput = `${c1},${c2},${m},${a},${b}`;
+    const challengeHash = crypto.createHash('sha256').update(challengeInput).digest('hex');
+    const e_verify = BigInt('0x' + challengeHash) % (p - 1n);
+    
+    if (e !== e_verify) return false;
+    
+    // Verificar equações
+    const left1 = modPow(g, s, p);
+    const right1 = (a * modPow(h, e, p)) % p;
+    
+    const left2 = modPow(c1, s, p);
+    const c2_div_m = (c2 * modInverse(m, p)) % p;
+    const right2 = (b * modPow(c2_div_m, e, p)) % p;
+    
+    return (left1 === right1) && (left2 === right2);
+}
+
+// Função auxiliar para encontrar contagem de votos
+function findVoteCount(g, target, p, maxVotes = 1000n) {
+    let current = 1n;
+    for (let i = 0n; i <= maxVotes; i++) {
+        if (current === target) return i;
+        current = (current * g) % p;
+    }
+    return null;
 }
 
 // ==================== FUNÇÕES ELGAMAL ====================
@@ -146,6 +214,7 @@ function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey) {
         console.log(`\nCandidato ${i + 1}:`);
         console.log(`  C1 = ${c1}, C2 = ${c2}`);
         
+        // Passo 1: Decifrar
         // M' = C2 * (C1^X)^-1 mod P
         const c1_x = modPow(c1, privateKey.x, publicKey.p);
         console.log(`  C1^X = ${c1}^${privateKey.x} mod ${publicKey.p} = ${c1_x}`);
@@ -157,24 +226,50 @@ function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey) {
         const m_prime = (c2 * c1_x_inv) % publicKey.p;
         console.log(`  M' = C2 * (C1^X)^-1 = ${c2} * ${c1_x_inv} mod ${publicKey.p} = ${m_prime}`);
         
-        // Buscar na tabela (força bruta para valores pequenos)
-        let voteCount = -1;
-        console.log("\n  Buscando na tabela de logaritmos discretos:");
-        for (let exp = 0n; exp <= 10n; exp++) {
-            const tableValue = modPow(publicKey.g, exp, publicKey.p);
-            console.log(`    G^${exp} mod ${publicKey.p} = ${tableValue}`);
-            if (tableValue === m_prime) {
-                voteCount = Number(exp);
-                console.log(`    ✓ ENCONTRADO! M = ${exp}`);
-                break;
-            }
-        }
+        // Passo 2: Encontrar contagem de votos
+        const voteCount = findVoteCount(publicKey.g, m_prime, publicKey.p);
+        console.log(`  Votos encontrados: ${voteCount}`);
         
-        results.push(voteCount);
-        console.log(`\nTotal de votos para Candidato ${i + 1}: ${voteCount}`);
+        // Passo 3: Gerar prova Chaum-Pedersen
+        const proof = generateDecryptionProof(
+            c1,
+            c2,
+            m_prime,
+            privateKey.x,
+            publicKey.g,
+            publicKey.h,
+            publicKey.p
+        );
+        
+        console.log(`  Prova Chaum-Pedersen gerada:`);
+        console.log(`    a (g^w): ${proof.commitment_a}`);
+        console.log(`    b (c1^w): ${proof.commitment_b}`);
+        console.log(`    e (challenge): ${proof.challenge}`);
+        console.log(`    s (response): ${proof.response}`);
+        
+        // Passo 4: Verificar a prova
+        const isValid = verifyDecryptionProof(
+            c1,
+            c2,
+            proof,
+            publicKey.g,
+            publicKey.h,
+            publicKey.p
+        );
+        
+        console.log(`  Prova válida: ${isValid ? '✅ SIM' : '❌ NÃO'}`);
+        
+        // Adicionar ao resultado
+        results.push({
+            candidato: i + 1,
+            votos: voteCount,
+            prova: proof,
+            valida: isValid
+        });
     }
     
-    return results;
+    // Retornar apenas a contagem de votos (compatibilidade)
+    return results.map(r => r.votos);
 }
 
 // ==================== FUNÇÃO PRINCIPAL ====================
@@ -204,10 +299,33 @@ async function main() {
     console.log(`Eleitor 3: ${voter3.address}`);
     
     // 4. Simular votos
+    // Criar função auxiliar
+    function generateSecureRandom(p, voterName = "") {
+    const r = BigInt('0x' + crypto.randomBytes(32).toString('hex')) % (p - 2n) + 1n;
+    console.log(`  🎲 R gerado para ${voterName}: ${r}`);
+    return r;
+    }
+
+    // Usar assim:
     const votes = [
-        { voter: voter1, vote: [1, 0], name: "Eleitor 1", r: 234n }, // Vota no candidato 1
-        { voter: voter2, vote: [0, 1], name: "Eleitor 2", r: 345n }, // Vota no candidato 2
-        { voter: voter3, vote: [1, 0], name: "Eleitor 3", r: 456n }, // Vota no candidato 1
+        { 
+            voter: voter1, 
+            vote: [0, 1], 
+            name: "Eleitor 1", 
+            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 1") 
+        },
+        { 
+            voter: voter2, 
+            vote: [0, 1], 
+            name: "Eleitor 2", 
+            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 2") 
+        },
+        { 
+            voter: voter3, 
+            vote: [0, 1], 
+            name: "Eleitor 3", 
+            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 3") 
+        }
     ];
     
     console.log("\n========== PROCESSO DE VOTAÇÃO ==========");
@@ -273,7 +391,7 @@ async function main() {
     console.log("\n========== VERIFICAÇÃO ==========");
     console.log(`Esperado - Candidato 1: ${expectedCandidate1} votos`);
     console.log(`Esperado - Candidato 2: ${expectedCandidate2} votos`);
-    console.log(`Resultado correto: ${results[0] === expectedCandidate1 && results[1] === expectedCandidate2 ? '✓ SIM' : '✗ NÃO'}`);
+    console.log(`Resultado correto: ${results[0] == expectedCandidate1 && results[1] == expectedCandidate2 ? '✓ SIM' : '✗ NÃO'}`);
     
     console.log("\n================================================");
     console.log("     TESTE CONCLUÍDO COM SUCESSO!");

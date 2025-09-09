@@ -38,6 +38,9 @@ contract ElGamalVoting {
         p = _p;
         g = _g;
         h = _h;
+        require(p > 1000000, "P deve ser maior que 1 milhao para seguranca");
+        require(h < p, "H deve ser menor que P");
+        require(g > 1 && g < p, "G deve estar entre 1 e P");
         emit ElGamalParametersSet(_p, _g, _h);
     }
     

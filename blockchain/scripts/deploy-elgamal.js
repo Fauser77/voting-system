@@ -9,10 +9,10 @@ async function main() {
     console.log("=== Deploy do Contrato ElGamalVoting ===\n");
     
     // Parâmetros ElGamal (pequenos para teste)
-    const p = 467n;  // Primo
-    const g = 2n;    // Gerador
-    const x = 123n;  // Chave privada (SECRETA!)
-    const h = 127n;  // g^x mod p = 2^123 mod 467 = 127
+    const p = 2147483647n;  // Primo de Mersenne (2^31 - 1)
+    const g = 3n;           // Gerador primitivo para este primo
+    const x = 1234567890n;  // Chave privada maior (SECRETA!)
+    const h = 1521993626n; // g^x mod p = 3^1234567890 mod 2147483647
     
     console.log("Parâmetros ElGamal:");
     console.log(`  P (primo): ${p}`);
