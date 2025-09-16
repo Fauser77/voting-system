@@ -3,58 +3,23 @@
 // Execução: npx hardhat run scripts/test-elgamal-voting.js --network poa
 
 const hre = require("hardhat");
+const { loadElGamalParams, modPow, modInverse } = require('./elgamal-utils');
+const crypto = require('crypto');
 
-// ==================== CONFIGURAÇÕES ELGAMAL ====================
-// Usando valores pequenos para facilitar verificação manual
-const ELGAMAL_PARAMS = {
-    p: 2147483647n,  // Primo de Mersenne (2^31 - 1)
-    g: 3n,           // Gerador primitivo
-    x: 1234567890n,  // Chave privada maior
-    // h será calculado: g^x mod p
-};
+const readline = require('readline');
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-// ==================== FUNÇÕES MATEMÁTICAS ====================
-
-// Função para calcular exponenciação modular
-function modPow(base, exponent, modulus) {
-    let result = 1n;
-    base = base % modulus;
-    while (exponent > 0n) {
-        if (exponent % 2n === 1n) {
-            result = (result * base) % modulus;
-        }
-        exponent = exponent / 2n;
-        base = (base * base) % modulus;
-    }
-    return result;
+function question(query) {
+    return new Promise(resolve => rl.question(query, resolve));
 }
 
-// Função para calcular o inverso modular usando algoritmo estendido de Euclides
-function modInverse(a, m) {
-    let m0 = m;
-    let x0 = 0n;
-    let x1 = 1n;
-    
-    if (m === 1n) return 0n;
-    
-    while (a > 1n) {
-        let q = a / m;
-        let t = m;
-        m = a % m;
-        a = t;
-        t = x0;
-        x0 = x1 - q * x0;
-        x1 = t;
-    }
-    
-    if (x1 < 0n) x1 += m0;
-    
-    return x1;
-}
+// Carregar parâmetros do arquivo
+const ELGAMAL_PARAMS = loadElGamalParams();
 
 // ==================== PROTOCOLO CHAUM-PEDERSEN ====================
-
-const crypto = require('crypto');
 
 function generateDecryptionProof(c1, c2, decryptedValue, x, g, h, p) {
     console.log("\n  Gerando Prova Chaum-Pedersen...");
@@ -124,30 +89,28 @@ function findVoteCount(g, target, p, maxVotes = 1000n) {
 
 // Gera as chaves ElGamal
 function generateElGamalKeys() {
-    const h = modPow(ELGAMAL_PARAMS.g, ELGAMAL_PARAMS.x, ELGAMAL_PARAMS.p);
-    
-    console.log("\n========== GERAÇÃO DE CHAVES ELGAMAL ==========");
+    console.log("\n========== PARÂMETROS ELGAMAL CARREGADOS ==========");
     console.log("Parâmetros públicos:");
-    console.log(`  P (primo): ${ELGAMAL_PARAMS.p}`);
+    console.log(`  P (${ELGAMAL_PARAMS.bits} bits): ${ELGAMAL_PARAMS.p.toString().substring(0, 50)}...`);
     console.log(`  G (gerador): ${ELGAMAL_PARAMS.g}`);
-    console.log(`  H (chave pública): ${h}`);
-    console.log(`    Cálculo: H = G^X mod P = ${ELGAMAL_PARAMS.g}^${ELGAMAL_PARAMS.x} mod ${ELGAMAL_PARAMS.p} = ${h}`);
+    console.log(`  H (chave pública): ${ELGAMAL_PARAMS.h.toString().substring(0, 50)}...`);
+    console.log(`  Gerados em: ${ELGAMAL_PARAMS.generated}`);
     console.log("\nChave privada (SECRETA!):");
-    console.log(`  X: ${ELGAMAL_PARAMS.x}`);
+    console.log(`  X: ${ELGAMAL_PARAMS.x.toString().substring(0, 50)}...`);
     
-    return { p: ELGAMAL_PARAMS.p, g: ELGAMAL_PARAMS.g, h, x: ELGAMAL_PARAMS.x };
+    return ELGAMAL_PARAMS;
 }
 
 // Cifra um voto usando ElGamal
-function encryptVote(vote, publicKey, voterName, r) {
+function encryptVote(vote, publicKey, voterName, rValues, candidateNames) {
     console.log(`\n--- Cifrando voto de ${voterName} ---`);
-    console.log(`Voto original: Candidato 1 = ${vote[0]}, Candidato 2 = ${vote[1]}`);
-    console.log(`R (aleatório para este voto): ${r}`);
+    console.log(`Voto: ${vote.map((v, i) => `${candidateNames[i]}=${v}`).join(', ')}`);
     
     const result = [];
     
     for (let i = 0; i < vote.length; i++) {
         const m = BigInt(vote[i]);
+        const r = rValues[i];
         
         // C1 = G^R mod P
         const c1 = modPow(publicKey.g, r, publicKey.p);
@@ -157,13 +120,14 @@ function encryptVote(vote, publicKey, voterName, r) {
         const g_m = modPow(publicKey.g, m, publicKey.p);
         const c2 = (h_r * g_m) % publicKey.p;
         
-        console.log(`\nCandidato ${i + 1}:`);
+        console.log(`\n${candidateNames[i]}:`);
+        console.log(`  R = ${r.toString().substring(0,20)}`);
         console.log(`  M = ${m}`);
-        console.log(`  C1 = G^R mod P = ${publicKey.g}^${r} mod ${publicKey.p} = ${c1}`);
+        console.log(`  C1 = G^R mod P = ${publicKey.g}^${r} mod ${publicKey.p} = ${c1.toString().substring(0,20)}`);
         console.log(`  C2 = H^R * G^M mod P`);
         console.log(`     H^R = ${publicKey.h}^${r} mod ${publicKey.p} = ${h_r}`);
         console.log(`     G^M = ${publicKey.g}^${m} mod ${publicKey.p} = ${g_m}`);
-        console.log(`     C2 = ${h_r} * ${g_m} mod ${publicKey.p} = ${c2}`);
+        console.log(`     C2 = ${h_r} * ${g_m} mod ${publicKey.p} = ${c2.toString().substring(0,20)}`);
         
         result.push({ c1, c2 });
     }
@@ -172,7 +136,7 @@ function encryptVote(vote, publicKey, voterName, r) {
 }
 
 // Agrega votos cifrados (multiplicação homomórfica)
-function aggregateEncryptedVotes(encryptedVotes, publicKey) {
+function aggregateEncryptedVotes(encryptedVotes, publicKey, candidateNames) {
     console.log("\n========== AGREGAÇÃO HOMOMÓRFICA DOS VOTOS ==========");
     
     const numCandidates = encryptedVotes[0].length;
@@ -182,7 +146,7 @@ function aggregateEncryptedVotes(encryptedVotes, publicKey) {
         let c1_product = 1n;
         let c2_product = 1n;
         
-        console.log(`\nCandidato ${candidateIdx + 1}:`);
+        console.log(`\n${candidateNames[candidateIdx]}:`);
         
         for (let voterIdx = 0; voterIdx < encryptedVotes.length; voterIdx++) {
             const vote = encryptedVotes[voterIdx][candidateIdx];
@@ -192,18 +156,16 @@ function aggregateEncryptedVotes(encryptedVotes, publicKey) {
             console.log(`  Após voto ${voterIdx + 1}: C1_agg = ${c1_product}, C2_agg = ${c2_product}`);
         }
         
-        aggregated.push({ c1: c1_product, c2: c2_product });
-        
-        console.log(`\nResultado agregado para Candidato ${candidateIdx + 1}:`);
-        console.log(`  C1_final = ${c1_product}`);
-        console.log(`  C2_final = ${c2_product}`);
+        aggregated.push({ c1: c1_product, c2: c2_product });  
+        console.log(`  C1_final = ${c1_product.toString().substring(0,30)}...`);
+        console.log(`  C2_final = ${c2_product.toString().substring(0,30)}...`);
     }
     
     return aggregated;
 }
 
 // Decifra votos agregados
-function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey) {
+function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey, candidateNames) {
     console.log("\n========== DECIFRAÇÃO DOS VOTOS AGREGADOS ==========");
     
     const results = [];
@@ -211,8 +173,7 @@ function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey) {
     for (let i = 0; i < aggregatedVotes.length; i++) {
         const { c1, c2 } = aggregatedVotes[i];
         
-        console.log(`\nCandidato ${i + 1}:`);
-        console.log(`  C1 = ${c1}, C2 = ${c2}`);
+        console.log(`\n${candidateNames[i]}:`);
         
         // Passo 1: Decifrar
         // M' = C2 * (C1^X)^-1 mod P
@@ -261,7 +222,7 @@ function decryptAggregatedVotes(aggregatedVotes, privateKey, publicKey) {
         
         // Adicionar ao resultado
         results.push({
-            candidato: i + 1,
+            candidato: candidateNames[i],
             votos: voteCount,
             prova: proof,
             valida: isValid
@@ -279,123 +240,191 @@ async function main() {
     console.log("     TESTE DE VOTAÇÃO COM ELGAMAL");
     console.log("================================================");
     
-    // 1. Gerar chaves ElGamal
+    // 1. Configurar candidatos dinamicamente
+    console.log("\n========== CONFIGURAÇÃO DOS CANDIDATOS ==========");
+    const numCandidatesStr = await question("Quantos candidatos? ");
+    const numCandidates = parseInt(numCandidatesStr);
+    
+    const candidateNames = [];
+    for (let i = 0; i < numCandidates; i++) {
+        const name = await question(`Nome do candidato ${i + 1}: `);
+        candidateNames.push(name);
+    }
+    
+    console.log("\nCandidatos registrados:");
+    candidateNames.forEach((name, idx) => console.log(`  ${idx + 1}. ${name}`));
+    
+    // 2. Gerar chaves ElGamal
     const keys = generateElGamalKeys();
     
-    // 2. Deploy do contrato
+    // 3. Deploy do contrato com candidatos
     console.log("\n========== DEPLOY DO CONTRATO ==========");
     const ElGamalVoting = await hre.ethers.getContractFactory("ElGamalVoting");
-    const contract = await ElGamalVoting.deploy(keys.p, keys.g, keys.h);
+    const contract = await ElGamalVoting.deploy(keys.p, keys.g, keys.h, candidateNames);
     await contract.waitForDeployment();
     const contractAddress = await contract.getAddress();
     console.log(`Contrato deployado em: ${contractAddress}`);
     
-    // 3. Configurar eleitores
-    const [deployer, voter1, voter2, voter3] = await hre.ethers.getSigners();
+    // 4. Configurar relayer e eleitores
+    const signers = await hre.ethers.getSigners();
+    const admin = signers[0];
+    const relayer = signers[1]; // Segunda conta como relayer
+    const voters = signers.slice(2, 12); // Próximas 10 contas (índices 2-11)
     
-    console.log("\n========== ELEITORES ==========");
-    console.log(`Eleitor 1: ${voter1.address}`);
-    console.log(`Eleitor 2: ${voter2.address}`);
-    console.log(`Eleitor 3: ${voter3.address}`);
+    console.log("\n========== CONFIGURANDO RELAYER ==========");
+    console.log(`Admin: ${admin.address}`);
+    console.log(`Relayer: ${relayer.address}`);
     
-    // 4. Simular votos
-    // Criar função auxiliar
-    function generateSecureRandom(p, voterName = "") {
-    const r = BigInt('0x' + crypto.randomBytes(32).toString('hex')) % (p - 2n) + 1n;
-    console.log(`  🎲 R gerado para ${voterName}: ${r}`);
-    return r;
-    }
-
-    // Usar assim:
-    const votes = [
-        { 
-            voter: voter1, 
-            vote: [0, 1], 
-            name: "Eleitor 1", 
-            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 1") 
-        },
-        { 
-            voter: voter2, 
-            vote: [0, 1], 
-            name: "Eleitor 2", 
-            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 2") 
-        },
-        { 
-            voter: voter3, 
-            vote: [0, 1], 
-            name: "Eleitor 3", 
-            r: generateSecureRandom(ELGAMAL_PARAMS.p, "Eleitor 3") 
-        }
-    ];
+    // Autorizar relayer
+    await contract.connect(admin).authorizeRelayer(relayer.address);
+    console.log("✓ Relayer autorizado!");
     
-    console.log("\n========== PROCESSO DE VOTAÇÃO ==========");
-    console.log("Votos em claro (para verificação):");
-    votes.forEach(v => {
-        console.log(`  ${v.name}: Candidato 1 = ${v.vote[0]}, Candidato 2 = ${v.vote[1]}`);
+    // 5. Exibir eleitores
+    console.log(`\n========== ${voters.length} ELEITORES ==========`);
+    voters.forEach((voter, i) => {
+        console.log(`Eleitor ${i + 1}: ${voter.address}`);
     });
     
-    // 5. Cifrar e enviar votos
-    const encryptedVotes = [];
+    // 6. Processo de votação
+    console.log("\n========== COLETA DE VOTOS ==========");
+    console.log("Instruções: Digite o número do candidato (1 a " + numCandidates + ")");
     
-    for (const voteData of votes) {
+    const votes = [];
+    const transactionHashes = [];
+    const encryptedVotesForAggregation = [];
+    
+    for (let i = 0; i < voters.length; i++) {
+        console.log(`\n--- Eleitor ${i + 1} (${voters[i].address.substring(0,10)}...) ---`);
+        const voteChoice = await question(`Vote no candidato (1-${numCandidates}): `);
+        const candidateIdx = parseInt(voteChoice) - 1;
+        
+        if (candidateIdx < 0 || candidateIdx >= numCandidates) {
+            console.log("❌ Voto inválido! Pulando eleitor...");
+            continue;
+        }
+        
+        // Criar array de voto (0 para todos, 1 para o escolhido)
+        const voteArray = new Array(numCandidates).fill(0);
+        voteArray[candidateIdx] = 1;
+        
+        // Gerar R aleatório para este eleitor e candidato
+        const rValues = [];
+        for (let j = 0; j < numCandidates; j++) {
+            rValues.push(generateSecureRandom(keys.p, `Eleitor ${i + 1} - ${candidateNames[j]}`));
+        }
+        
         // Cifrar voto
-        const encrypted = encryptVote(voteData.vote, keys, voteData.name, voteData.r);
-        encryptedVotes.push(encrypted);
+        const encrypted = encryptVote(voteArray, keys, `Eleitor ${i + 1}`, rValues, candidateNames);
+
+        encryptedVotesForAggregation.push(encrypted);
         
-        // Enviar para blockchain
-        console.log(`\nEnviando voto cifrado de ${voteData.name} para blockchain...`);
-        const tx = await contract.connect(voteData.voter).submitEncryptedVote(
-            encrypted[0].c1,
-            encrypted[0].c2,
-            encrypted[1].c1,
-            encrypted[1].c2
+        // Preparar arrays para o contrato
+        const c1_values = encrypted.map(e => e.c1);
+        const c2_values = encrypted.map(e => e.c2);
+        
+        // Enviar via relayer (mascarando endereço real)
+        console.log(`Enviando voto via relayer...`);
+        const tx = await contract.connect(relayer).submitEncryptedVote(
+            c1_values,
+            c2_values,
+            voters[i].address // Endereço real do eleitor (será mascarado on-chain)
         );
-        await tx.wait();
-        console.log(`✓ Voto registrado na blockchain!`);
-    }
-    
-    // 6. Buscar votos da blockchain
-    console.log("\n========== VERIFICAÇÃO DOS VOTOS NA BLOCKCHAIN ==========");
-    const totalVotes = await contract.getTotalVotes();
-    console.log(`Total de votos registrados: ${totalVotes}`);
-    
-    const votesFromBlockchain = [];
-    for (let i = 0; i < totalVotes; i++) {
-        const vote = await contract.getVote(i);
-        console.log(`\nVoto ${i + 1}:`);
-        console.log(`  Eleitor: ${vote[4]}`);
-        console.log(`  Candidato 1: C1=${vote[0]}, C2=${vote[1]}`);
-        console.log(`  Candidato 2: C1=${vote[2]}, C2=${vote[3]}`);
         
-        votesFromBlockchain.push([
-            { c1: BigInt(vote[0]), c2: BigInt(vote[1]) },
-            { c1: BigInt(vote[2]), c2: BigInt(vote[3]) }
-        ]);
+        const receipt = await tx.wait();
+        console.log(`✓ Voto registrado!`);
+        console.log(`  Hash da transação: ${receipt.hash}`);
+        console.log(`  Bloco: ${receipt.blockNumber}`);
+        
+        transactionHashes.push(receipt.hash);
+        
+        votes.push({
+            eleitor: i + 1,
+            endereço: voters[i].address,
+            candidato: candidateNames[candidateIdx],
+            voteArray,
+            txHash: receipt.hash
+        });
     }
     
-    // 7. Agregar votos (off-chain)
-    const aggregated = aggregateEncryptedVotes(votesFromBlockchain, keys);
+    // 7. Salvar informações para o monitor
+    const monitorData = {
+        contractAddress,
+        transactionHashes,
+        candidateNames,
+        totalVoters: voters.length,
+        timestamp: new Date().toISOString()
+    };
     
-    // 8. Decifrar resultado
-    const results = decryptAggregatedVotes(aggregated, keys, keys);
+    const fs = require('fs');
+    fs.writeFileSync('voting-transactions.json', JSON.stringify(monitorData, null, 2));
+    console.log("\n✓ Hashes das transações salvos em voting-transactions.json");
+    console.log("  Use o monitor-elgamal-votes.js passando um hash para verificar");
     
-    // 9. Exibir resultado final
+    // 8. Buscar votos da blockchain e agregar
+    console.log("\n========== VERIFICAÇÃO DOS VOTOS NA BLOCKCHAIN ==========");
+    const totalVotesOnChain = await contract.getTotalVotes();
+    console.log(`Total de votos registrados: ${totalVotesOnChain}`);
+    
+    // Coletar votos da blockchain para agregação
+    const votesFromBlockchain = [];
+    for (let i = 0; i < totalVotesOnChain; i++) {
+        const vote = await contract.getVote(i);
+        const voteData = [];
+        for (let j = 0; j < numCandidates; j++) {
+            voteData.push({
+                c1: BigInt(vote[0][j]),
+                c2: BigInt(vote[1][j])
+            });
+        }
+        votesFromBlockchain.push(voteData);
+    }
+    
+    // 9. Agregar e decifrar
+    const aggregated = aggregateEncryptedVotes(votesFromBlockchain, keys, candidateNames);
+    const results = decryptAggregatedVotes(aggregated, keys, keys, candidateNames);
+    
+    // 10. Exibir resultado final
     console.log("\n========== RESULTADO FINAL DA ELEIÇÃO ==========");
-    console.log(`Candidato 1: ${results[0]} votos`);
-    console.log(`Candidato 2: ${results[1]} votos`);
+    candidateNames.forEach((name, idx) => {
+        console.log(`${name}: ${results[idx]} votos`);
+    });
     
     // Verificação
-    const expectedCandidate1 = votes.filter(v => v.vote[0] === 1).length;
-    const expectedCandidate2 = votes.filter(v => v.vote[1] === 1).length;
-    
     console.log("\n========== VERIFICAÇÃO ==========");
-    console.log(`Esperado - Candidato 1: ${expectedCandidate1} votos`);
-    console.log(`Esperado - Candidato 2: ${expectedCandidate2} votos`);
-    console.log(`Resultado correto: ${results[0] == expectedCandidate1 && results[1] == expectedCandidate2 ? '✓ SIM' : '✗ NÃO'}`);
+    const voteCounts = new Array(numCandidates).fill(0);
+    votes.forEach(v => {
+        const idx = candidateNames.indexOf(v.candidato);
+        if (idx !== -1) voteCounts[idx]++;
+    });
+    
+    console.log("Esperado:");
+    candidateNames.forEach((name, idx) => {
+        console.log(`  ${name}: ${voteCounts[idx]} votos`);
+    });
+    
+    const correct = results.every((r, i) => r === BigInt(voteCounts[i]));
+    console.log(`\nResultado correto: ${correct ? '✅ SIM' : '❌ NÃO'}`);
+    
+    console.log("\n========== INSTRUÇÕES PARA VERIFICAÇÃO ==========");
+    console.log("Para verificar uma transação específica, execute:");
+    console.log("  npx hardhat run scripts/monitor-elgamal-votes.js --network poa");
+    console.log("E escolha a opção 2 para buscar por hash");
+    console.log("\nHashes disponíveis:");
+    transactionHashes.forEach((hash, i) => {
+        console.log(`  Eleitor ${i + 1}: ${hash}`);
+    });
+    
+    rl.close();
     
     console.log("\n================================================");
     console.log("     TESTE CONCLUÍDO COM SUCESSO!");
     console.log("================================================");
+}
+
+function generateSecureRandom(p, voterName = "") {
+    const r = BigInt('0x' + crypto.randomBytes(32).toString('hex')) % (p - 2n) + 1n;
+    console.log(`  🎲 R gerado para ${voterName}: ${r.toString().substring(0, 30)}...`);
+    return r;
 }
 
 main()

@@ -1,48 +1,64 @@
 // deploy-elgamal.js
-// Script simplificado para apenas fazer o deploy do contrato ElGamal
-// Execução: npx hardhat run scripts/deploy-elgamal.js --network poa
-
 const hre = require("hardhat");
 const fs = require('fs');
+const { loadElGamalParams } = require('./elgamal-utils');
 
 async function main() {
     console.log("=== Deploy do Contrato ElGamalVoting ===\n");
     
-    // Parâmetros ElGamal (pequenos para teste)
-    const p = 2147483647n;  // Primo de Mersenne (2^31 - 1)
-    const g = 3n;           // Gerador primitivo para este primo
-    const x = 1234567890n;  // Chave privada maior (SECRETA!)
-    const h = 1521993626n; // g^x mod p = 3^1234567890 mod 2147483647
+    // Carregar parâmetros do arquivo
+    const params = loadElGamalParams();
     
-    console.log("Parâmetros ElGamal:");
-    console.log(`  P (primo): ${p}`);
-    console.log(`  G (gerador): ${g}`);
-    console.log(`  H (chave pública): ${h}`);
-    console.log(`  X (chave privada - SECRETA): ${x}\n`);
+    console.log("Parâmetros ElGamal carregados:");
+    console.log(`  P (${params.bits} bits): ${params.p.toString().substring(0, 50)}...`);
+    console.log(`  G (gerador): ${params.g}`);
+    console.log(`  H (chave pública): ${params.h.toString().substring(0, 50)}...`);
+    console.log(`  Gerados em: ${params.generated}\n`);
+    
+    // Definir candidatos padrão para o deploy
+    const candidateNames = ["Candidato A", "Candidato B", "Candidato C"];
+    console.log("Candidatos padrão para deploy:");
+    candidateNames.forEach((name, idx) => console.log(`  ${idx + 1}. ${name}`));
     
     // Deploy
     const [deployer] = await hre.ethers.getSigners();
-    console.log(`Deploying com a conta: ${deployer.address}`);
+    console.log(`\nDeploying com a conta: ${deployer.address}`);
     
     const ElGamalVoting = await hre.ethers.getContractFactory("ElGamalVoting");
-    const contract = await ElGamalVoting.deploy(p, g, h);
+    const contract = await ElGamalVoting.deploy(
+        params.p, 
+        params.g, 
+        params.h,
+        candidateNames  // Adicionar array de candidatos
+    );
     await contract.waitForDeployment();
     
     const contractAddress = await contract.getAddress();
     console.log(`\nContrato deployado em: ${contractAddress}`);
     
-    // Salvar endereço e parâmetros
+    // Configurar relayer (segunda conta)
+    const signers = await hre.ethers.getSigners();
+    if (signers.length > 1) {
+        const relayer = signers[1];
+        console.log(`\nConfigurando relayer: ${relayer.address}`);
+        await contract.authorizeRelayer(relayer.address);
+        console.log("✓ Relayer autorizado!");
+    }
+    
+    // Salvar endereço e informações do contrato
     const data = {
         contract: contractAddress,
-        p: p.toString(),
-        g: g.toString(),
-        h: h.toString(),
-        x: x.toString(),
+        candidateNames: candidateNames,
+        relayer: signers.length > 1 ? signers[1].address : null,
+        paramsFile: 'elgamal-params.json',
         deployed: new Date().toISOString()
     };
     
     fs.writeFileSync('elgamal-contract.json', JSON.stringify(data, null, 2));
-    console.log("\nEndereço e parâmetros salvos em elgamal-contract.json");
+    console.log("\nInformações salvas:");
+    console.log("  - Endereço do contrato em elgamal-contract.json");
+    console.log("  - Parâmetros ElGamal em elgamal-params.json");
+    console.log("  - Candidatos: " + candidateNames.join(", "));
 }
 
 main()
