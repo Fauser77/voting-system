@@ -111,7 +111,6 @@ contract Ballot {
     }
 
 // ======================== FUNÇÕES DE VOTAÇÃO ========================
-    // event ElGamalParametersSet(uint256 p, uint256 g, uint256 h);
     function submitEncryptedVote(
         uint256[] memory _c1_values,
         uint256[] memory _c2_values,
