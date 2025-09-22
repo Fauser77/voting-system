@@ -2,138 +2,267 @@
 pragma solidity ^0.8.0;
 
 contract Ballot {
+
+// ======================== ESTRUTURAS ========================
+    struct EncryptedVote {
+        uint256[] c1_values; 
+        uint256[] c2_values;  
+        uint256 timestamp;
+        address relayer;
+    }
+
     struct Voter {
-        bool isVoted;         
-        bool hasRightToVote;  
-        uint8 vote;           
-        address ID;          
+        bool hasRightToVote;
+        bool hasVoted;
     }
 
-    struct Proposal {
-        string name;          
-        uint voteCount;       
-    }
+// ======================== VARIÁVEIS DE ESTADO ========================
+    address public immutable admin;
+    bool public votingEnded;
 
-    // Endereço do administrador da votação
-    address public chairPerson;
+    uint256 public immutable p; 
+    uint256 public immutable g; 
+    uint256 public immutable h;
+
+    uint256 public immutable numCandidates;
+    string[] public candidateNames;
+
+    EncryptedVote[] public encryptedVotes;
     
-    // Estado da votação (pausado/ativo)
-    bool public votingPaused;
-
-    // Mapeamento de endereços para eleitores
+    // Mapeamentos, é um estado interno do contrato!
     mapping(address => Voter) public voters;
+    mapping(address => bool) public authorizedRelayers;
 
-    // Array de propostas/candidatos
-    Proposal[] public proposals;
+    // Para estatísticas futuras, sobretudo de participação
+    uint256 public immutable totalAuthorizedVoters;
 
-    event VoteCast(uint indexed blockNumber, string candidateName);
-    event VotingPaused();
-    event VotingResumed();
+    // Resultado final (preenchido após decifração off-chain)
+    uint256 public winningProposalIndex;
+    bool public resultsPublished;
+    uint256[] public finalVoteCounts;
 
-    modifier onlyChairPerson() {
-        require(msg.sender == chairPerson, "Apenas o administrador pode executar esta funcao");
+// ======================== EVENTOS ========================
+    event VoteSubmitted(
+        uint256[] c1_values,
+        uint256[] c2_values,
+        uint256 timestamp,
+        address indexed relayer
+    );
+    
+    event ElGamalParametersSet(uint256 p, uint256 g, uint256 h);
+    event VoterAuthorized(address indexed voter);
+    event RelayerAuthorized(address indexed relayer);
+    event VotingEnded(uint256 timestamp);
+    event ResultsPublished(uint256[] voteCounts, uint256 winnerIndex);
+
+// ======================== MODIFICADORES ========================
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Apenas administrador");
         _;
     }
     
-    modifier whenNotPaused() {
-        require(!votingPaused, "A votacao esta pausada");
+    modifier votingActive() {
+        require(!votingEnded, "Votacao encerrada");
         _;
     }
     
-    constructor(string[] memory candidateNames) {
-        chairPerson = msg.sender;
-        votingPaused = false; // Votação inicia ativa
+    modifier votingFinished() {
+        require(votingEnded, "Votacao ainda ativa");
+        _;
+    }
+
+// ======================== CONSTRUTOR ========================
+    constructor(
+        uint256 _p,
+        uint256 _g,
+        uint256 _h,
+        string[] memory _candidateNames,
+        address[] memory _authorizedVoters,
+        address[] memory _authorizedRelayers
+    ) {
+        require(_candidateNames.length > 0, "Minimo 1 candidato");
+        require(_authorizedVoters.length > 0, "Minimo 1 eleitor");
+        require(_authorizedRelayers.length > 0, "Minimo 1 relayer");
+        require(_p > 1000000, "P deve ser maior que 1 milhao para seguranca");
+        require(_h < _p, "H deve ser menor que P");
+        require(_g > 1 && _g < _p, "G deve estar entre 1 e P");
         
-        // Inicializa o array de propostas com os nomes dos candidatos
-        for (uint i = 0; i < candidateNames.length; i++) {
-            proposals.push(Proposal({
-                name: candidateNames[i],
-                voteCount: 0
-            }));
+        admin = msg.sender;
+        p = _p;
+        g = _g;
+        h = _h;
+        numCandidates = _candidateNames.length;
+        candidateNames = _candidateNames;
+        totalAuthorizedVoters = _authorizedVoters.length;
+        votingEnded = false;
+        resultsPublished = false;
+        
+        for (uint i = 0; i < _authorizedVoters.length; i++) {
+            voters[_authorizedVoters[i]].hasRightToVote = true;
+            emit VoterAuthorized(_authorizedVoters[i]);
         }
         
-        voters[chairPerson].hasRightToVote = true;
+        for (uint i = 0; i < _authorizedRelayers.length; i++) {
+            authorizedRelayers[_authorizedRelayers[i]] = true;
+            emit RelayerAuthorized(_authorizedRelayers[i]);
+        }
+        
+        emit ElGamalParametersSet(_p, _g, _h);
     }
 
-    // Função para dar direito de voto a um endereço
-    function giveRightToVote(address toVoter) public onlyChairPerson {
-        require(!voters[toVoter].isVoted, "Eleitor ja votou");
+// ======================== FUNÇÕES DE VOTAÇÃO ========================
+    // event ElGamalParametersSet(uint256 p, uint256 g, uint256 h);
+    function submitEncryptedVote(
+        uint256[] memory _c1_values,
+        uint256[] memory _c2_values,
+        address _voter
+    ) public votingActive {
+        require(authorizedRelayers[msg.sender], "Relayer nao autorizado");
+        require(voters[_voter].hasRightToVote, "Eleitor nao autorizado");
+        require(!voters[_voter].hasVoted, "Eleitor ja votou");
+        require(_c1_values.length == numCandidates, "Numero incorreto de C1");
+        require(_c2_values.length == numCandidates, "Numero incorreto de C2");
         
-        voters[toVoter].hasRightToVote = true;
+        for(uint i = 0; i < numCandidates; i++) {
+            require(_c1_values[i] > 0 && _c1_values[i] < p, "C1 invalido");
+            require(_c2_values[i] > 0 && _c2_values[i] < p, "C2 invalido");
+        }
         
-        voters[toVoter].ID = toVoter;
-    }
-
-    // Função para votar em uma proposta
-    function vote(uint8 toProposal) public whenNotPaused {
-        Voter storage sender = voters[msg.sender];
+        EncryptedVote memory newVote = EncryptedVote({
+            c1_values: _c1_values,
+            c2_values: _c2_values,
+            timestamp: block.timestamp,
+            relayer: msg.sender
+        });
         
-        require(!sender.isVoted, "Voce ja votou");
-        require(toProposal < proposals.length, "Proposta invalida");
-        require(sender.hasRightToVote, "Voce nao tem direito a voto");
+        encryptedVotes.push(newVote);
+        voters[_voter].hasVoted = true; 
         
-        sender.isVoted = true;
-        sender.vote = toProposal;
-        
-        proposals[toProposal].voteCount += 1;
-
-        emit VoteCast(
-            block.number,                 
-            proposals[toProposal].name   
+        emit VoteSubmitted(
+            _c1_values,
+            _c2_values,
+            block.timestamp,
+            msg.sender
         );
     }
 
-    // Função para determinar a proposta vencedora
-    function winningProposal() public view returns (uint256 _winningProposal) {
-        uint256 winningVoteCount = 0;
-        _winningProposal = 0;
+// ======================== FUNÇÕES DE ENCERRAMENTO ========================
+    function endVoting() public onlyAdmin votingActive {
+        votingEnded = true;
+        emit VotingEnded(block.timestamp);
+    }
+    
+    function publishResults(
+        uint256[] memory _voteCounts,
+        uint256 _winnerIndex
+    ) public onlyAdmin votingFinished {
+        require(!resultsPublished, "Resultados ja publicados");
+        require(_voteCounts.length == numCandidates, "Numero incorreto de resultados");
+        require(_winnerIndex < numCandidates, "Indice do vencedor invalido");
         
-        for (uint8 prop = 0; prop < proposals.length; prop++) {
-            if (proposals[prop].voteCount > winningVoteCount) {
-                winningVoteCount = proposals[prop].voteCount;
-                _winningProposal = prop;
-            }
+        finalVoteCounts = _voteCounts;
+        winningProposalIndex = _winnerIndex;
+        resultsPublished = true;
+        
+        emit ResultsPublished(_voteCounts, _winnerIndex);
+    }
+    
+// ======================== FUNÇÕES DE CONSULTA ========================   
+    function getTotalVotes() public view returns (uint256) {
+        return encryptedVotes.length;
+    }
+
+    function getAllEncryptedVotes() public view returns (EncryptedVote[] memory) {
+        return encryptedVotes;
+    }
+    
+    function getVote(uint256 _index) public view returns (
+        uint256[] memory c1_values,
+        uint256[] memory c2_values,
+        uint256 timestamp,
+        address relayer
+    ) {
+        require(_index < encryptedVotes.length, "Indice invalido");
+        EncryptedVote memory vote = encryptedVotes[_index];
+        return (
+            vote.c1_values,
+            vote.c2_values,
+            vote.timestamp,
+            vote.relayer
+        );
+    }
+    
+    // Será útil no front
+    function hasRightToVote(address _voter) public view returns (bool) {
+        return voters[_voter].hasRightToVote;
+    }
+    
+    // Será útil no front
+    function hasVoted(address _voter) public view returns (bool) {
+        return voters[_voter].hasVoted;
+    }
+    
+    function getCandidate(uint256 _index) public view returns (
+        string memory name,
+        uint256 voteCount
+    ) {
+        require(_index < candidateNames.length, "Candidato nao existe");
+        
+        if (resultsPublished) {
+            return (candidateNames[_index], finalVoteCounts[_index]);
+        } else {
+            return (candidateNames[_index], 0);
         }
     }
     
-    // Função para obter o nome do candidato vencedor
-    function winnerName() public view returns (string memory) {
-        return proposals[winningProposal()].name;
+    function getWinnerName() public view returns (string memory) {
+        require(resultsPublished, "Resultados nao publicados");
+        return candidateNames[winningProposalIndex];
     }
     
-    // Função para obter o número total de propostas
-    function getProposalCount() public view returns (uint) {
-        return proposals.length;
+    function getProposalCount() public view returns (uint256) {
+        return candidateNames.length;
     }
     
-    // Função para verificar se alguém tem direito a voto
-    function hasRightToVote(address voter) public view returns (bool) {
-        return voters[voter].hasRightToVote;
+    function getElGamalParameters() public view returns (
+        uint256 prime,
+        uint256 generator,
+        uint256 publicKey
+    ) {
+        return (p, g, h);
     }
     
-    // Função para obter informações sobre um candidato
-    function getCandidate(uint index) public view returns (string memory name, uint voteCount) {
-        require(index < proposals.length, "Candidato nao existe");
-        Proposal storage proposal = proposals[index];
-        return (proposal.name, proposal.voteCount);
+    function getVotingStatus() public view returns (
+        bool isEnded,
+        bool hasResults,
+        uint256 totalVotes,
+        uint256 totalCandidates
+    ) {
+        return (
+            votingEnded,
+            resultsPublished,
+            encryptedVotes.length,
+            numCandidates
+        );
     }
     
-    // Função para pausar a votação
-    function pauseVoting() public onlyChairPerson {
-        require(!votingPaused, "A votacao ja esta pausada");
-        votingPaused = true;
-        emit VotingPaused();
+    function getVoterStats() public view returns (
+        uint256 totalAuthorized,
+        uint256 totalVoted,
+        uint256 participationPercentage
+    ) {
+        uint256 voted = encryptedVotes.length;
+        uint256 percentage = 0;
+        
+        if (totalAuthorizedVoters > 0) {
+            percentage = (voted * 100) / totalAuthorizedVoters;
+        }
+        
+        return (
+            totalAuthorizedVoters,
+            voted,
+            percentage
+        );
     }
     
-    // Função para retomar a votação
-    function resumeVoting() public onlyChairPerson {
-        require(votingPaused, "A votacao nao esta pausada");
-        votingPaused = false;
-        emit VotingResumed();
-    }
-    
-    // Função para verificar se a votação está pausada
-    function isVotingPaused() public view returns (bool) {
-        return votingPaused;
-    }
 }
