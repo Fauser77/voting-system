@@ -1,7 +1,3 @@
-// test-elgamal-voting.js
-// Script completo para testar votação com ElGamal
-// Execução: npx hardhat run scripts/test-elgamal-voting.js --network poa
-
 const hre = require("hardhat");
 const { loadElGamalParams, modPow, modInverse } = require('./elgamal-utils');
 const crypto = require('crypto');

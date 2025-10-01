@@ -105,27 +105,26 @@ async function main() {
     console.log(`   Total que votou: ${voterStats.totalVoted}`);
     console.log(`   Participação: ${voterStats.participationPercentage}%`);
     
-    const deployData = {
+    // ==================== GERAR PUBLIC-CONFIG.JSON ====================
+    const publicConfig = {
         contract: contractAddress,
         network: hre.network.name,
-        admin: admin.address,
         candidateNames: candidateNames,
-        authorizedVoters: authorizedVoters,
-        authorizedRelayers: authorizedRelayers,
+        numCandidates: candidateNames.length,
         elgamalParams: {
             p: params.p.toString(),
             g: params.g.toString(),
             h: params.h.toString(),
             bits: params.bits
         },
-        deployedAt: new Date().toISOString(),
+        votingStarted: new Date().toISOString(),
         blockNumber: await hre.ethers.provider.getBlockNumber(),
-        configFile: 'election-config.json'
+        chainId: 12345,
+        rpcUrl: hre.network.config.url || "http://127.0.0.1:8545"
     };
     
-    fs.writeFileSync('deploy-info.json', JSON.stringify(deployData, null, 2));
-    console.log("\n💾 Informações do deploy salvas em 'deploy-info.json'");
-    
+    fs.writeFileSync('public-config.json', JSON.stringify(publicConfig, null, 2));
+    console.log("\n💾 Configuração pública salva em 'public-config.json'");
     console.log("\n" + "=".repeat(50));
     console.log("🎉 DEPLOY CONCLUÍDO COM SUCESSO!");
     console.log("=".repeat(50));

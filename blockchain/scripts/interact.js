@@ -1,205 +1,208 @@
 const hre = require("hardhat");
-const readline = require('readline');
-const { connectToBallot, displayBallotInfo, displayResults } = require('./utils');
+const { encryptVote, validateEncryptedVote, generateRandom, modPow } = require('./elgamal-utils');
+const fs = require('fs');
+require('dotenv').config();
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+// ==================== CONFIGURAÇÃO ====================
 
-function prompt(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
-    });
-  });
-}
+let CONFIG = null;
 
-async function giveRightToVote(ballot, chairperson, voterAddress) {
-  const hasRight = await ballot.hasRightToVote(voterAddress);
-  if (hasRight) {
-    console.log(`Address ${voterAddress} already has voting rights`);
-    return true;
-  }
-  
-  try {
-    const tx = await ballot.connect(chairperson).giveRightToVote(voterAddress);
-    await tx.wait();
-    console.log(`Voting rights granted to ${voterAddress}`);
-    return true;
-  } catch (error) {
-    console.error(`Error granting rights: ${error.message}`);
-    return false;
-  }
-}
+let CONTRACT_INSTANCE = null;
 
-async function vote(ballot, voter, candidateIndex) {
-  try {
-    const candidate = await ballot.getCandidate(candidateIndex);
-    console.log(`Voting for: ${candidate[0]}`);
-    
-    const tx = await ballot.connect(voter).vote(candidateIndex);
-    await tx.wait();
-    
-    console.log(`Vote registered successfully`);
-    return true;
-  } catch (error) {
-    console.error(`Error voting: ${error.message}`);
-    return false;
-  }
-}
-
-async function showMenu() {
-  console.clear();
-  console.log("=== Voting System ===");
-  console.log("1. Contract Info");
-  console.log("2. Grant Voting Rights");
-  console.log("3. Vote");
-  console.log("4. View Results");
-  console.log("0. Exit");
-  console.log("-".repeat(25));
-  
-  return await prompt("Choose option: ");
-}
-
-async function grantRightsMenu(ballot, accounts) {
-  console.clear();
-  console.log("=== Grant Voting Rights ===");
-  
-  const chairperson = accounts[0];
-  console.log(`ChairPerson: ${chairperson.address}`);
-  
-  console.log("\nAvailable accounts:");
-  for (let i = 1; i < Math.min(accounts.length, 6); i++) {
-    const addr = accounts[i].address;
-    const hasRight = await ballot.hasRightToVote(addr);
-    console.log(`[${i}] ${addr} ${hasRight ? '✓' : '✗'}`);
-  }
-  
-  const choice = await prompt("\nAccount number (0 to go back): ");
-  if (choice === '0') return;
-  
-  const index = parseInt(choice);
-  if (index > 0 && index < accounts.length) {
-    await giveRightToVote(ballot, chairperson, accounts[index].address);
-  } else {
-    console.log("Invalid account number");
-  }
-  
-  await prompt("Press Enter to continue...");
-}
-
-async function voteMenu(ballot, accounts) {
-  console.clear();
-  console.log("=== Vote ===");
-  
-  console.log("Select account to vote:");
-  for (let i = 0; i < Math.min(accounts.length, 6); i++) {
-    const addr = accounts[i].address;
-    const hasRight = await ballot.hasRightToVote(addr);
-    const voter = await ballot.voters(addr);
-    
-    console.log(`[${i}] ${addr}`);
-    console.log(`    Rights: ${hasRight ? '✓' : '✗'} | Voted: ${voter.isVoted ? '✓' : '✗'}`);
-  }
-  
-  const accountChoice = await prompt("\nAccount number (9 to go back): ");
-  if (accountChoice === '9') return;
-  
-  const accountIndex = parseInt(accountChoice);
-  if (accountIndex < 0 || accountIndex >= accounts.length) {
-    console.log("Invalid account");
-    await prompt("Press Enter to continue...");
-    return;
-  }
-  
-  const voter = accounts[accountIndex];
-  const hasRight = await ballot.hasRightToVote(voter.address);
-  const voterInfo = await ballot.voters(voter.address);
-  
-  if (!hasRight) {
-    console.log("Account has no voting rights");
-    await prompt("Press Enter to continue...");
-    return;
-  }
-  
-  if (voterInfo.isVoted) {
-    console.log("Account already voted");
-    await prompt("Press Enter to continue...");
-    return;
-  }
-  
-  console.log("\nCandidates:");
-  const numProposals = await ballot.getProposalCount();
-  for (let i = 0; i < numProposals; i++) {
-    const candidate = await ballot.getCandidate(i);
-    console.log(`[${i}] ${candidate[0]} (${candidate[1]} votes)`);
-  }
-  
-  const candidateChoice = await prompt("\nCandidate number: ");
-  const candidateIndex = parseInt(candidateChoice);
-  
-  if (candidateIndex >= 0 && candidateIndex < numProposals) {
-    await vote(ballot, voter, candidateIndex);
-  } else {
-    console.log("Invalid candidate");
-  }
-  
-  await prompt("Press Enter to continue...");
-}
-
-async function main() {
-  try {
-    const ballot = await connectToBallot();
-    const accounts = await hre.ethers.getSigners();
-    
-    let running = true;
-    
-    while (running) {
-      const choice = await showMenu();
-      
-      switch (choice) {
-        case '1':
-          console.clear();
-          await displayBallotInfo(ballot, accounts);
-          await prompt("\nPress Enter to continue...");
-          break;
-          
-        case '2':
-          await grantRightsMenu(ballot, accounts);
-          break;
-          
-        case '3':
-          await voteMenu(ballot, accounts);
-          break;
-          
-        case '4':
-          console.clear();
-          await displayResults(ballot);
-          await prompt("\nPress Enter to continue...");
-          break;
-          
-        case '0':
-          running = false;
-          break;
-          
-        default:
-          console.log("Invalid option");
-          await prompt("Press Enter to continue...");
-      }
+async function loadPublicConfig() {
+    const publicConfigFile = 'public-config.json';
+    if (!fs.existsSync(publicConfigFile)) {
+        throw new Error("Arquivo de configuração pública não encontrado");
     }
     
-    console.log("Exiting...");
-    rl.close();
-  } catch (error) {
-    console.error("Error:", error.message);
-    rl.close();
-    process.exit(1);
-  }
+    return JSON.parse(fs.readFileSync(publicConfigFile, 'utf8'));
 }
 
-module.exports = { giveRightToVote, vote };
+async function getContractConfig() {
+    if (!CONFIG) {
+        console.log("🔄 Carregando configuração inicial...");
+        
+        const publicConfig = await loadPublicConfig();
+        const ELGAMAL_PARAMS = publicConfig.elgamalParams;
+        
+        const Ballot = await hre.ethers.getContractFactory("Ballot");
+        CONTRACT_INSTANCE = Ballot.attach(publicConfig.contract);
+        
+        CONFIG = {
+            contract: CONTRACT_INSTANCE,
+            candidateNames: publicConfig.candidateNames,
+            numCandidates: publicConfig.numCandidates,
+            publicKey: {
+                p: BigInt(ELGAMAL_PARAMS.p),
+                g: BigInt(ELGAMAL_PARAMS.g),
+                h: BigInt(ELGAMAL_PARAMS.h)
+            },
+            network: publicConfig.network,
+            deployedAt: publicConfig.votingStarted
+        };
+        
+        console.log("✅ Configuração estática carregada");
+    }
+    
+    const votingStatus = await CONTRACT_INSTANCE.getVotingStatus();
+    
+    if (votingStatus.isEnded) {
+        throw new Error("VOTAÇÃO ENCERRADA: O contrato não está mais aceitando votos");
+    }
+    
+    return CONFIG;
+}
 
+// ==================== FUNÇÕES DE VALIDAÇÃO ====================
+
+async function validateVoter(contract, voterAddress) {
+    console.log("🔍 Validando eleitor no contrato...");
+    
+    
+        const hasRight = await contract.hasRightToVote(voterAddress);
+        if (!hasRight) {
+            throw new Error("ELEITOR NÃO AUTORIZADO: Endereço não tem direito de voto");
+        }
+        
+        const hasVoted = await contract.hasVoted(voterAddress);
+        if (hasVoted) {
+            throw new Error("ELEITOR JÁ VOTOU: Este endereço já registrou seu voto");
+        }
+        
+        console.log("✅ Eleitor validado e apto para votar");
+        return true;   
+}
+
+// ==================== FUNÇÃO PRINCIPAL DE VOTAÇÃO ====================
+
+async function submitVote(voterAddress, candidateIndex) {
+    try {
+        const config = await getContractConfig();
+        
+        if (candidateIndex < 0 || candidateIndex >= config.numCandidates) {
+            return {
+                success: false,
+                error: `Índice de candidato inválido. Escolha entre 0 e ${config.numCandidates - 1}`
+            };
+        }
+        
+        await validateVoter(config.contract, voterAddress);
+        
+        const { c1_values, c2_values } = encryptVote(
+            candidateIndex, 
+            config.numCandidates, 
+            config.publicKey
+        );
+
+        const validation = validateEncryptedVote(c1_values, c2_values, config.numCandidates);
+        if (!validation.valid) {
+            throw new Error(`Erro na cifragem: ${validation.error}`);
+        }
+        
+        
+        const relayerPrivateKey = process.env.RELAYER_PRIVATE_KEY;
+        if (!relayerPrivateKey) {
+            throw new Error("Chave privada do relayer não configurada");
+        }
+        
+        const relayerWallet = new hre.ethers.Wallet(relayerPrivateKey, hre.ethers.provider);
+        
+        console.log("📤 Enviando voto para blockchain...");
+        const tx = await config.contract.connect(relayerWallet).submitEncryptedVote(
+            c1_values,
+            c2_values,
+            voterAddress
+        );
+        
+        console.log("⏳ Aguardando confirmação...");
+        const receipt = await tx.wait();
+        
+        return {
+            success: true,
+            txHash: receipt.hash,
+            blockNumber: receipt.blockNumber,
+            gasUsed: receipt.gasUsed.toString(),
+            candidate: config.candidateNames[candidateIndex]
+        };
+        
+    } catch (error) {
+        console.error("❌ Erro ao processar voto:", error.message);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+// ==================== TESTE STANDALONE ====================
+
+// Se executado diretamente (não importado)
 if (require.main === module) {
-  main();
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    
+    function question(query) {
+        return new Promise(resolve => rl.question(query, resolve));
+    }
+    
+    async function main() {
+        try {
+            console.log("\n🗳️  SISTEMA DE VOTAÇÃO \n");
+            
+            const config = await getContractConfig();
+            
+            console.log("📊 Eleição Ativa");
+            console.log("📅 Iniciada em:", config.deployedAt);
+            console.log("🌐 Rede:", config.network);
+            console.log("\n👥 Candidatos:");
+            config.candidateNames.forEach((name, idx) => {
+                console.log(`   ${idx + 1}. ${name}`);
+            });
+            
+            const voterAddress = await question("\n🔍 Endereço do eleitor: ");
+            
+            try {
+                await validateVoter(config.contract, voterAddress);
+                console.log("✅ Eleitor autorizado e pode votar");
+            } catch (error) {
+                console.log(`\n❌ ${error.message}`);
+                rl.close();
+                process.exit(1);
+            }
+            
+            const choice = await question(`\n🗳 Escolha o candidato (1-${config.candidateNames.length}): `);
+            const candidateIndex = parseInt(choice) - 1;
+            
+            console.log("\n⏳ Processando voto...");
+            const result = await submitVote(voterAddress, candidateIndex);
+            
+            if (result.success) {
+                console.log("\n✅ VOTO REGISTRADO COM SUCESSO!");
+                console.log(`📋 Transação: ${result.txHash}`);
+                console.log(`📦 Bloco: ${result.blockNumber}`);
+                console.log(`⛽ Gas usado: ${result.gasUsed}`);
+                console.log(`👤 Candidato: ${result.candidate}`);
+            } else {
+                console.log(`\n❌ Erro: ${result.error}`);
+            }
+            
+            rl.close();
+            
+        } catch (error) {
+            console.error("\n❌ Erro:", error.message);
+            
+            if (error.message.includes("VOTAÇÃO ENCERRADA")) {
+                console.log("\n📊 A eleição já foi finalizada e não aceita mais votos.");
+                console.log("🔍 Verifique os resultados através do script de apuração.\n");
+            }
+            
+            rl.close();
+            process.exit(1);
+        }
+    }
+    
+    main();
 }
