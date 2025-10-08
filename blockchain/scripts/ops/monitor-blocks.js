@@ -181,17 +181,19 @@ async function processElectionResults(config) {
     // Decidir estratégia baseado no número de votos
     let votes = [];
     
-    // Para eleições grandes, buscar individualmente para evitar gas limit
-    console.log("  Coletando votos individualmente (eleição grande)...");
-    
-    for (let i = 0; i < totalVotes; i++) {
-        const voteData = await config.contract.getVote(i);
+    // Usar getAllEncryptedVotes para buscar todos de uma vez
+    console.log("  Coletando todos os votos de uma vez...");
+
+    const allEncryptedVotes = await config.contract.getAllEncryptedVotes();
+
+    for (let i = 0; i < allEncryptedVotes.length; i++) {
+        const voteData = allEncryptedVotes[i];
         const vote = [];
         
         for (let j = 0; j < config.candidateNames.length; j++) {
             vote.push({
-                c1: BigInt(voteData[0][j]),
-                c2: BigInt(voteData[1][j])
+                c1: BigInt(voteData.c1_values[j]),
+                c2: BigInt(voteData.c2_values[j])
             });
         }
         votes.push(vote);

@@ -84,7 +84,7 @@ function decryptValue(c1, c2, privateKey, publicKey) {
     }
 }
 
-function validateEncryptedVote(c1_values, c2_values, numCandidates) {
+function validateEncryptedVote(c1_values, c2_values, numCandidates, p) {
     // Verificações básicas
     if (!c1_values || !c2_values) {
         return { valid: false, error: "Valores cifrados ausentes" };
@@ -94,14 +94,18 @@ function validateEncryptedVote(c1_values, c2_values, numCandidates) {
         return { valid: false, error: "Número incorreto de valores cifrados" };
     }
     
-    // Verifica se todos são BigInt válidos e positivos
+    // Validação idêntica ao contrato: require(_c1_values[i] > 0 && _c1_values[i] < p)
     for (let i = 0; i < numCandidates; i++) {
         try {
             if (typeof c1_values[i] !== 'bigint' || typeof c2_values[i] !== 'bigint') {
                 return { valid: false, error: `Valor na posição ${i} não é BigInt` };
             }
-            if (c1_values[i] <= 0n || c2_values[i] <= 0n) {
-                return { valid: false, error: `Valor na posição ${i} não é positivo` };
+            // Espelhando exatamente a validação do contrato
+            if (!(c1_values[i] > 0n && c1_values[i] < p)) {
+                return { valid: false, error: `C1 inválido na posição ${i}` };
+            }
+            if (!(c2_values[i] > 0n && c2_values[i] < p)) {
+                return { valid: false, error: `C2 inválido na posição ${i}` };
             }
         } catch (e) {
             return { valid: false, error: `Erro ao validar posição ${i}: ${e.message}` };

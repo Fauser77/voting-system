@@ -4,7 +4,7 @@ let CONFIG = null;
 let CONTRACT_INSTANCE = null;
 
 // Função para carregar parâmetros do arquivo
-function loadElGamalParams() {
+async function loadElGamalParams() {
     const paramsFile = 'elgamal-params.json';
     
     if (!fs.existsSync(paramsFile)) {
@@ -16,7 +16,7 @@ function loadElGamalParams() {
     const params = JSON.parse(fs.readFileSync(paramsFile, 'utf8'));
     
     // Converter strings para BigInt
-    return {
+    const localParams = {
         p: BigInt(params.p),
         g: BigInt(params.g),
         h: BigInt(params.h),
@@ -24,6 +24,17 @@ function loadElGamalParams() {
         generated: params.generated,
         bits: params.bits
     };
+
+    // Validar com o contrato se disponível
+    if (CONTRACT_INSTANCE) {
+        const [prime, generator, publicKey] = await CONTRACT_INSTANCE.getElGamalParameters();
+        if (localParams.p !== BigInt(prime) || localParams.g !== BigInt(generator) || localParams.h !== BigInt(publicKey)) {
+            console.error("⚠️ Parâmetros locais não correspondem aos do contrato!");
+            throw new Error("Incompatibilidade de parâmetros ElGamal");
+        }
+    }
+    
+    return localParams;
 }
 
 async function loadPublicConfig() {
@@ -61,13 +72,15 @@ async function getContractConfig() {
         console.log("✅ Configuração estática carregada");
     }
     
-    const votingEnded = await CONTRACT_INSTANCE.votingEnded();
-    const totalVotes = await CONTRACT_INSTANCE.getTotalVotes();
+    // Usar getVotingStatus para pegar tudo de uma vez
+    const [isEnded, hasResults, totalVotes, totalCandidates] = await CONTRACT_INSTANCE.getVotingStatus();
     
     return {
         ...CONFIG,
-        votingEnded,
-        totalVotes: totalVotes.toString()
+        votingEnded: isEnded,
+        resultsPublished: hasResults,
+        totalVotes: totalVotes.toString(),
+        totalCandidates: totalCandidates.toString()
     };
 }
 

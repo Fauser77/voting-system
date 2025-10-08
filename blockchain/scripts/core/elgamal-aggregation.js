@@ -35,7 +35,17 @@ async function homomorphicAggregation(votes, elgamalParams, candidateNames) {
 }
 
 async function decryptAggregatedResults(aggregated, elgamalParams, maxVoters) {
-    console.log("\n🔓 Decifrando resultados agregados (Método Helios)...");
+     console.log("\n🔓 Decifrando resultados agregados (Método Helios)...");
+    
+    // Obter estatísticas para validação
+    if (contract) {
+        const [totalAuthorized, totalVoted, participation] = await contract.getVoterStats();
+        console.log(`  📊 Estatísticas: ${totalVoted}/${totalAuthorized} votaram (${participation}%)`);
+        
+        // Usar totalVoted como limite superior mais preciso
+        maxVoters = Number(totalVoted);
+    }
+    
     console.log(`  Máximo de eleitores autorizados: ${maxVoters}`);
     
     // Criar decoder estilo Helios
