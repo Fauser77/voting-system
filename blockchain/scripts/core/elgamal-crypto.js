@@ -1,31 +1,4 @@
-// elgamal-utils.js
-// Funções utilitárias compartilhadas para ElGamal
-
-const fs = require('fs');
 const crypto = require('crypto');
-
-// Função para carregar parâmetros do arquivo
-function loadElGamalParams() {
-    const paramsFile = 'elgamal-params.json';
-    
-    if (!fs.existsSync(paramsFile)) {
-        console.error("❌ Arquivo elgamal-params.json não encontrado!");
-        console.log("   Execute primeiro: node scripts/elgamal-params-generator.js");
-        process.exit(1);
-    }
-    
-    const params = JSON.parse(fs.readFileSync(paramsFile, 'utf8'));
-    
-    // Converter strings para BigInt
-    return {
-        p: BigInt(params.p),
-        g: BigInt(params.g),
-        h: BigInt(params.h),
-        x: BigInt(params.x),
-        generated: params.generated,
-        bits: params.bits
-    };
-}
 
 // Função para exponenciação modular
 function modPow(base, exponent, modulus) {
@@ -139,7 +112,6 @@ function validateEncryptedVote(c1_values, c2_values, numCandidates) {
 }
 
 module.exports = {
-    loadElGamalParams,
     modPow,
     modInverse,
     generateRandom,

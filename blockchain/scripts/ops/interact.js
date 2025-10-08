@@ -1,57 +1,7 @@
 const hre = require("hardhat");
-const { encryptVote, validateEncryptedVote, generateRandom, modPow } = require('./elgamal-utils');
+const {getContractConfig, encryptVote, validateEncryptedVote } = require('./elgamal-utils');
 const fs = require('fs');
 require('dotenv').config();
-
-// ==================== CONFIGURAÇÃO ====================
-
-let CONFIG = null;
-
-let CONTRACT_INSTANCE = null;
-
-async function loadPublicConfig() {
-    const publicConfigFile = 'public-config.json';
-    if (!fs.existsSync(publicConfigFile)) {
-        throw new Error("Arquivo de configuração pública não encontrado");
-    }
-    
-    return JSON.parse(fs.readFileSync(publicConfigFile, 'utf8'));
-}
-
-async function getContractConfig() {
-    if (!CONFIG) {
-        console.log("🔄 Carregando configuração inicial...");
-        
-        const publicConfig = await loadPublicConfig();
-        const ELGAMAL_PARAMS = publicConfig.elgamalParams;
-        
-        const Ballot = await hre.ethers.getContractFactory("Ballot");
-        CONTRACT_INSTANCE = Ballot.attach(publicConfig.contract);
-        
-        CONFIG = {
-            contract: CONTRACT_INSTANCE,
-            candidateNames: publicConfig.candidateNames,
-            numCandidates: publicConfig.numCandidates,
-            publicKey: {
-                p: BigInt(ELGAMAL_PARAMS.p),
-                g: BigInt(ELGAMAL_PARAMS.g),
-                h: BigInt(ELGAMAL_PARAMS.h)
-            },
-            network: publicConfig.network,
-            deployedAt: publicConfig.votingStarted
-        };
-        
-        console.log("✅ Configuração estática carregada");
-    }
-    
-    const votingStatus = await CONTRACT_INSTANCE.getVotingStatus();
-    
-    if (votingStatus.isEnded) {
-        throw new Error("VOTAÇÃO ENCERRADA: O contrato não está mais aceitando votos");
-    }
-    
-    return CONFIG;
-}
 
 // ==================== FUNÇÕES DE VALIDAÇÃO ====================
 
