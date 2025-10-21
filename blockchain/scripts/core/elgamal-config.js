@@ -26,7 +26,7 @@ async function getContractConfig() {
             contract: CONTRACT_INSTANCE,
             candidateNames: publicConfig.candidateNames,
             numCandidates: publicConfig.numCandidates,
-            publicKey: {
+            params: {
                 p: BigInt(ELGAMAL_PARAMS.p),
                 g: BigInt(ELGAMAL_PARAMS.g),
                 h: BigInt(ELGAMAL_PARAMS.h)

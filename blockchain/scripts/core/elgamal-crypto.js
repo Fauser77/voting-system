@@ -40,7 +40,7 @@ function generateRandom(p) {
     return BigInt('0x' + crypto.randomBytes(32).toString('hex')) % (p - 2n) + 1n;
 }
 
-function encryptVote(candidateIndex, numCandidates, publicKey) {
+function encryptVote(candidateIndex, numCandidates, params) {
     // Cria vetor binário (0,0,...,1,...,0) onde 1 está na posição do candidato
     const voteArray = new Array(numCandidates).fill(0);
     voteArray[candidateIndex] = 1;
@@ -51,15 +51,15 @@ function encryptVote(candidateIndex, numCandidates, publicKey) {
     for (let i = 0; i < voteArray.length; i++) {
         const m = BigInt(voteArray[i]);
         
-        const r = generateRandom(publicKey.p);
+        const r = generateRandom(params.p);
         
         // C1 = G^R mod P
-        const c1 = modPow(publicKey.g, r, publicKey.p);
+        const c1 = modPow(params.g, r, params.p);
         
         // C2 = H^R * G^M mod P
-        const h_r = modPow(publicKey.h, r, publicKey.p);
-        const g_m = modPow(publicKey.g, m, publicKey.p);
-        const c2 = (h_r * g_m) % publicKey.p;
+        const h_r = modPow(params.h, r, params.p);
+        const g_m = modPow(params.g, m, params.p);
+        const c2 = (h_r * g_m) % params.p;
         
         c1_values.push(c1);
         c2_values.push(c2);

@@ -5,22 +5,38 @@ require('dotenv').config();
 
 // ==================== FUNÇÕES DE VALIDAÇÃO ====================
 
-async function validateVoter(contract, voterAddress) {
-    console.log("🔍 Validando eleitor no contrato...");
-    
-    
-        const hasRight = await contract.hasRightToVote(voterAddress);
+async function validateVoter(contract, voterAddress) {    
+    try {
+        console.log("🔍 Validando eleitor no contrato...");
+        
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout na validação")), 30000)
+        );
+        
+        const hasRight = await Promise.race([
+            contract.hasRightToVote(voterAddress),
+            timeoutPromise
+        ]);
         if (!hasRight) {
             throw new Error("ELEITOR NÃO AUTORIZADO: Endereço não tem direito de voto");
         }
-        
-        const hasVoted = await contract.hasVoted(voterAddress);
+
+        const hasVoted = await Promise.race([
+            contract.hasVoted(voterAddress),
+            timeoutPromise
+        ]);
         if (hasVoted) {
             throw new Error("ELEITOR JÁ VOTOU: Este endereço já registrou seu voto");
         }
-        
+
         console.log("✅ Eleitor validado e apto para votar");
-        return true;   
+        return true;
+    } catch (error) {
+        if (error.code === 'NETWORK_ERROR') {
+            throw new Error("Erro de rede ao validar eleitor");
+        }
+        throw error;
+    }  
 }
 
 // ==================== FUNÇÃO PRINCIPAL DE VOTAÇÃO ====================
@@ -38,21 +54,27 @@ async function submitVote(voterAddress, candidateIndex) {
         
         await validateVoter(config.contract, voterAddress);
         
+        console.log("🔐 Cifrando voto com ElGamal...");
         const { c1_values, c2_values } = encryptVote(
             candidateIndex, 
             config.numCandidates, 
-            config.publicKey
+            config.params
         );
+        console.log("✅ Voto cifrado com sucesso");
 
-        const validation = validateEncryptedVote(c1_values, c2_values, config.numCandidates);
+        console.log("🔍 Validando integridade da cifragem...");    
+        const validation = validateEncryptedVote(c1_values, c2_values, config.numCandidates, config.params.p);
         if (!validation.valid) {
             throw new Error(`Erro na cifragem: ${validation.error}`);
         }
-        
+        console.log("✅ Cifragem validada");
         
         const relayerPrivateKey = process.env.RELAYER_PRIVATE_KEY;
-        if (!relayerPrivateKey) {
-            throw new Error("Chave privada do relayer não configurada");
+        if (!relayerPrivateKey || relayerPrivateKey.length !== 66) { // 0x + 64 chars
+            throw new Error("Chave privada do relayer inválida ou não configurada");
+        }
+        if (!relayerPrivateKey.startsWith('0x')) {
+            throw new Error("Chave privada deve começar com '0x'");
         }
         
         const relayerWallet = new hre.ethers.Wallet(relayerPrivateKey, hre.ethers.provider);
@@ -66,6 +88,11 @@ async function submitVote(voterAddress, candidateIndex) {
         
         console.log("⏳ Aguardando confirmação...");
         const receipt = await tx.wait();
+
+        const voterStatus = await config.contract.hasVoted(voterAddress);
+        if (!voterStatus) {
+            throw new Error("Falha na confirmação do voto na blockchain");
+        }
         
         return {
             success: true,
