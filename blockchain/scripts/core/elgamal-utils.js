@@ -30,7 +30,6 @@ const {
 
 // Importar funções de configuração
 const {
-    loadElGamalParams,
     loadPublicConfig,
     getContractConfig,
     CONFIG,
@@ -58,7 +57,6 @@ module.exports = {
     HeliosDecoder,
     
     // Funções de configuração
-    loadElGamalParams,
     loadPublicConfig,
     getContractConfig,
     CONFIG,

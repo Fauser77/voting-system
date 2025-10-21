@@ -1,7 +1,6 @@
 const hre = require("hardhat");
 const fs = require('fs');
 const path = require('path');
-const { loadElGamalParams } = require('./elgamal-utils');
 
 function loadElectionConfig() {
     const configFile = path.join(__dirname, 'election-config.json');    
@@ -12,7 +11,6 @@ function loadElectionConfig() {
         console.log("   {");
         console.log('     "candidateNames": ["Nome1", "Nome2", ...],');
         console.log('     "authorizedVoters": ["0x...", "0x...", ...],');
-        console.log('     "authorizedRelayers": ["0x...", ...]');
         console.log("   }");
         process.exit(1);
     }
@@ -28,11 +26,30 @@ function loadElectionConfig() {
         console.log("⚠️  Nenhum eleitor definido no arquivo");
     }
     
-    if (!config.authorizedRelayers || config.authorizedRelayers.length === 0) {
-        console.log("⚠️  Nenhum relayer definido no arquivo");
+    return config;
+}
+
+async function loadElGamalParams() {
+    const paramsFile = 'elgamal-params.json';
+    
+    if (!fs.existsSync(paramsFile)) {
+        console.error("❌ Arquivo elgamal-params.json não encontrado!");
+        console.log("   Execute primeiro: node scripts/elgamal-params-generator.js");
+        process.exit(1);
     }
     
-    return config;
+    const params = JSON.parse(fs.readFileSync(paramsFile, 'utf8'));
+    
+    // Converter strings para BigInt
+    const localParams = {
+        p: BigInt(params.p),
+        g: BigInt(params.g),
+        h: BigInt(params.h),
+        generated: params.generated,
+        bits: params.bits
+    };
+    
+    return localParams;
 }
 
 async function main() {
@@ -48,13 +65,15 @@ async function main() {
     const electionConfig = loadElectionConfig();
     const candidateNames = electionConfig.candidateNames;
     const authorizedVoters = electionConfig.authorizedVoters;
-    const authorizedRelayers = electionConfig.authorizedRelayers;
     
     // Pega as contas do hardhat, apenas Admin e Relayers
     const accounts = await hre.ethers.getSigners();
     
     // Admin será a primeira conta
     const admin = accounts[0];
+
+    // Relayers serão as contas restantes 
+    const authorizedRelayers = accounts.slice(1).map(account => account.address);
     
     console.log("🗳️  Configuração da Eleição:");
     console.log(`   Administrador: ${admin.address}`);
@@ -102,8 +121,6 @@ async function main() {
     const voterStats = await ballot.getVoterStats();
     console.log(`\n📊 Estatísticas dos eleitores:`);
     console.log(`   Total autorizado: ${voterStats.totalAuthorized}`);
-    console.log(`   Total que votou: ${voterStats.totalVoted}`);
-    console.log(`   Participação: ${voterStats.participationPercentage}%`);
     
     // ==================== GERAR PUBLIC-CONFIG.JSON ====================
     const publicConfig = {

@@ -3,40 +3,6 @@ const fs = require('fs');
 let CONFIG = null;
 let CONTRACT_INSTANCE = null;
 
-// Função para carregar parâmetros do arquivo
-async function loadElGamalParams() {
-    const paramsFile = 'elgamal-params.json';
-    
-    if (!fs.existsSync(paramsFile)) {
-        console.error("❌ Arquivo elgamal-params.json não encontrado!");
-        console.log("   Execute primeiro: node scripts/elgamal-params-generator.js");
-        process.exit(1);
-    }
-    
-    const params = JSON.parse(fs.readFileSync(paramsFile, 'utf8'));
-    
-    // Converter strings para BigInt
-    const localParams = {
-        p: BigInt(params.p),
-        g: BigInt(params.g),
-        h: BigInt(params.h),
-        x: BigInt(params.x),
-        generated: params.generated,
-        bits: params.bits
-    };
-
-    // Validar com o contrato se disponível
-    if (CONTRACT_INSTANCE) {
-        const [prime, generator, publicKey] = await CONTRACT_INSTANCE.getElGamalParameters();
-        if (localParams.p !== BigInt(prime) || localParams.g !== BigInt(generator) || localParams.h !== BigInt(publicKey)) {
-            console.error("⚠️ Parâmetros locais não correspondem aos do contrato!");
-            throw new Error("Incompatibilidade de parâmetros ElGamal");
-        }
-    }
-    
-    return localParams;
-}
-
 async function loadPublicConfig() {
     const publicConfigFile = 'public-config.json';
     if (!fs.existsSync(publicConfigFile)) {
@@ -85,7 +51,6 @@ async function getContractConfig() {
 }
 
 module.exports = {
-    loadElGamalParams,
     loadPublicConfig,
     getContractConfig,
     CONFIG,
