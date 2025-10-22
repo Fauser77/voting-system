@@ -37,17 +37,10 @@ async function homomorphicAggregation(votes, elgamalParams, candidateNames) {
 async function decryptAggregatedResults(aggregated, elgamalParams, maxVoters) {
      console.log("\n🔓 Decifrando resultados agregados (Método Helios)...");
     
-    // Obter estatísticas para validação
-    if (contract) {
-        const [totalAuthorized, totalVoted, participation] = await contract.getVoterStats();
-        console.log(`  📊 Estatísticas: ${totalVoted}/${totalAuthorized} votaram (${participation}%)`);
-        
-        // Usar totalVoted como limite superior mais preciso
-        maxVoters = Number(totalVoted);
-    }
-    
     console.log(`  Máximo de eleitores autorizados: ${maxVoters}`);
     
+    const maxVotersBigInt = BigInt(maxVoters);
+
     // Criar decoder estilo Helios
     const decoder = new HeliosDecoder(elgamalParams.g, elgamalParams.p);
     const results = [];
@@ -65,7 +58,7 @@ async function decryptAggregatedResults(aggregated, elgamalParams, maxVoters) {
         
         // Decodificar usando método Helios (eficiente para eleições grandes)
         console.log("    🔍 Decodificando contagem de votos...");
-        const voteCount = decoder.decode(m_prime, maxVoters);
+        const voteCount = decoder.decode(m_prime, maxVotersBigInt);
         
         if (voteCount === null) {
             console.log(`    ⚠️ AVISO: Não foi possível determinar contagem para ${candidate}`);
@@ -110,7 +103,8 @@ async function decryptAggregatedResults(aggregated, elgamalParams, maxVoters) {
 
 // Algoritmo Baby-step Giant-step do Helios - O(√n) complexidade
 function babyStepGiantStep(g, target, p, maxValue) {
-    const m = BigInt(Math.ceil(Math.sqrt(Number(maxValue))));
+    const maxValueBigInt = BigInt(maxValue);    
+    const m = BigInt(Math.ceil(Math.sqrt(Number(maxValueBigInt))));
     
     // Baby steps: computar g^0, g^1, ..., g^m
     const table = new Map();
@@ -129,7 +123,7 @@ function babyStepGiantStep(g, target, p, maxValue) {
         if (table.has(gamma.toString())) {
             const i = table.get(gamma.toString());
             const result = j * m + i;
-            if (result <= maxValue) {
+            if (result <= maxValueBigInt) {
                 return result;
             }
         }
@@ -142,47 +136,13 @@ function babyStepGiantStep(g, target, p, maxValue) {
 // Classe de decodificação estilo Helios com cache e otimizações
 class HeliosDecoder {
     constructor(g, p) {
-        this.g = g;
-        this.p = p;
-        this.cache = new Map();
-        this.precomputeSmallValues();
-    }
-    
-    precomputeSmallValues() {
-        console.log("    📊 Pré-computando valores pequenos (0-1000)...");
-        let current = 1n;
-        for(let i = 0n; i <= 1000n; i++) {
-            this.cache.set(current.toString(), i);
-            current = (current * this.g) % this.p;
-        }
-        console.log("    ✓ Cache preparado");
+        this.g = BigInt(g);
+        this.p = BigInt(p);
     }
     
     decode(target, maxValue) {
-        const targetStr = target.toString();
-        
-        // Verificar cache primeiro
-        if (this.cache.has(targetStr)) {
-            return this.cache.get(targetStr);
-        }
-        
-        // Para valores grandes, usar baby-step giant-step
-        if (maxValue > 1000n) {
-            console.log(`    🔄 Usando algoritmo Baby-step Giant-step (máx: ${maxValue})...`);
-            return babyStepGiantStep(this.g, target, this.p, maxValue);
-        }
-        
-        // Força bruta para valores médios
-        return this.bruteForceDecode(target, maxValue);
-    }
-    
-    bruteForceDecode(target, maxValue) {
-        let current = 1n;
-        for(let i = 0n; i <= maxValue; i++) {
-            if (current === target) return i;
-            current = (current * this.g) % this.p;
-        }
-        return null;
+        console.log(`    🔄 Usando Baby-step Giant-step (máx: ${maxValue})...`);
+        return babyStepGiantStep(this.g, BigInt(target), this.p, BigInt(maxValue));
     }
 }
 
