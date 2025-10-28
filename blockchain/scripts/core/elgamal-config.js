@@ -1,10 +1,12 @@
 const fs = require('fs');
+const path = require('path');
+const hre = require("hardhat");
 
 let CONFIG = null;
 let CONTRACT_INSTANCE = null;
 
 async function loadPublicConfig() {
-    const publicConfigFile = 'public-config.json';
+    const publicConfigFile = path.join(__dirname, '..', '..', 'config', 'public-config.json');
     if (!fs.existsSync(publicConfigFile)) {
         throw new Error("Arquivo de configuração pública não encontrado");
     }
@@ -19,8 +21,8 @@ async function getContractConfig() {
         const publicConfig = await loadPublicConfig();
         const ELGAMAL_PARAMS = publicConfig.elgamalParams;
         
-        const ElGamalVoting = await hre.ethers.getContractFactory("ElGamalVoting");
-        CONTRACT_INSTANCE = ElGamalVoting.attach(publicConfig.contract);
+        const Ballot = await hre.ethers.getContractFactory("Ballot");
+        CONTRACT_INSTANCE = Ballot.attach(publicConfig.contract);
         
         CONFIG = {
             contract: CONTRACT_INSTANCE,

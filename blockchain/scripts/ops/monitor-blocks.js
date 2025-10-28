@@ -1,7 +1,10 @@
 const hre = require("hardhat");
 const fs = require('fs');
-const { homomorphicAggregation, decryptAggregatedResults, getContractConfig } = require('./elgamal-utils');
+const { homomorphicAggregation, decryptAggregatedResults, getContractConfig } = require('../core/elgamal-utils');
 require('dotenv').config();
+const path = require('path');
+const resultsDir = path.join(__dirname, '..', '..', 'results');
+
 
 // ==================== FUNÇÕES DE VERIFICAÇÃO ====================
 
@@ -125,9 +128,9 @@ async function processElectionResults(config) {
     
     // Obter parâmetros ElGamal
     const elgamalParams = {
-    p: BigInt(config.elgamalParams.p),
-    g: BigInt(config.elgamalParams.g),
-    h: BigInt(config.elgamalParams.h)
+        p: BigInt(config.params.p),
+        g: BigInt(config.params.g),
+        h: BigInt(config.params.h)
     };
     
     // Verificar se os resultados já foram publicados no contrato
@@ -169,8 +172,8 @@ async function processElectionResults(config) {
             }
         };
         
-        fs.writeFileSync('election-results.json', JSON.stringify(finalResults, null, 2));
-        console.log("\n💾 Resultados salvos em 'election-results.json'");
+        fs.writeFileSync(path.join(resultsDir, 'election-results.json'), JSON.stringify(finalResults, null, 2));
+        console.log("\n💾 Resultados salvos em 'blockchain/results/election-results.json'");
         return finalResults;
     }
     
@@ -234,8 +237,8 @@ async function processElectionResults(config) {
             }
         };
         
-        fs.writeFileSync('encrypted-results.json', JSON.stringify(encryptedResults, null, 2));
-        console.log("\n💾 Resultados agregados cifrados salvos em 'encrypted-results.json'");
+        fs.writeFileSync(path.join(resultsDir, 'encrypted-results.json'), JSON.stringify(encryptedResults, null, 2));
+        console.log("\n💾 Resultados agregados cifrados salvos em 'blockchain/results/encrypted-results.json'");
         return encryptedResults;
     }
     
@@ -268,7 +271,7 @@ async function processElectionResults(config) {
         decodingMethod: "Helios-style (Baby-step Giant-step)"
     };
     
-    fs.writeFileSync('election-results.json', JSON.stringify(finalResults, null, 2));
+    fs.writeFileSync(path.join(resultsDir, 'election-results.json'), JSON.stringify(finalResults, null, 2));
     
     console.log("\n========== RESULTADO FINAL DA ELEIÇÃO ==========");
     results.forEach(r => {
@@ -287,7 +290,7 @@ async function processElectionResults(config) {
     
     console.log(`\n🏆 VENCEDOR: ${winner.candidate} com ${winner.votes} votos!`);
     
-    console.log("\n💾 Resultados salvos em 'election-results.json'");
+    console.log("\n💾 Resultados salvos em 'blockchain/results/election-results.json'");
     console.log("📝 Método de decodificação: Helios-style (Baby-step Giant-step)");
     
     return finalResults;
@@ -320,9 +323,9 @@ async function main() {
         console.log(`  Rede: ${config.network}`);
         
         console.log("\n🔑 PARÂMETROS ELGAMAL (do arquivo de configuração):");
-        console.log(`  P: ${config.elgamalParams.p.substring(0, 40)}...`);
-        console.log(`  G: ${config.elgamalParams.g}`);
-        console.log(`  H: ${config.elgamalParams.h.substring(0, 40)}...`);
+        console.log(`  P: ${config.params.p.toString().substring(0, 40)}...`);
+        console.log(`  G: ${config.params.g}`);
+        console.log(`  H: ${config.params.h.toString().substring(0, 40)}...`);
         
         // 4. Verificar se foi passado um hash de transação como argumento
         const args = process.argv.slice(2);
@@ -330,8 +333,8 @@ async function main() {
 
         // 5. Decidir fluxo baseado no status da votação
         if (votingEnded && hasResults) {
-            console.log("📄 Resultados já disponíveis em 'election-results.json'");
-            const results = JSON.parse(fs.readFileSync('election-results.json', 'utf-8'));
+            console.log("📄 Resultados já disponíveis em 'blockchain/results/election-results.json'");
+            const results = JSON.parse(fs.readFileSync(path.join(resultsDir, 'election-results.json'), 'utf-8'));
             console.log(`\n🏆 Vencedor: ${results.winner}`);
             console.log(`📊 Participação: ${results.participation.percentage}%`);
             
@@ -341,7 +344,10 @@ async function main() {
             
         } else {
             console.log("\n⏳ Votação em andamento");
-            
+
+            console.log("\n✅ Votação encerrada - aguardando publicação dos resultados");
+            await processElectionResults(config);
+
             // Mostrar estatísticas atuais
             const stats = await config.contract.getVoterStats();
             console.log("\n📊 PARTICIPAÇÃO ATUAL:");

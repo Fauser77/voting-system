@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 function loadElectionConfig() {
-    const configFile = path.join(__dirname, 'election-config.json');    
+    const configFile = path.join(__dirname, '..', '..', 'config', 'election-config.json');
 
     if (!fs.existsSync(configFile)) {
         console.error("❌ Arquivo election-config.json não encontrado!");
@@ -30,7 +30,7 @@ function loadElectionConfig() {
 }
 
 async function loadElGamalParams() {
-    const paramsFile = 'elgamal-params.json';
+    const paramsFile = path.join(__dirname, '..', '..', 'config', 'elgamal-params.json');
     
     if (!fs.existsSync(paramsFile)) {
         console.error("❌ Arquivo elgamal-params.json não encontrado!");
@@ -48,14 +48,14 @@ async function loadElGamalParams() {
         generated: params.generated,
         bits: params.bits
     };
-    
+    console.log(localParams)
     return localParams;
 }
 
 async function main() {
     console.log("=== Deploy do Contrato de Votação ElGamal ===\n");
     
-    const params = loadElGamalParams();
+    const params = await loadElGamalParams();
     console.log("📊 Parâmetros ElGamal:");
     console.log(`   P (${params.bits} bits): ${params.p.toString().substring(0, 40)}...`);
     console.log(`   G (gerador): ${params.g}`);
@@ -140,8 +140,9 @@ async function main() {
         rpcUrl: hre.network.config.url || "http://127.0.0.1:8545"
     };
     
-    fs.writeFileSync('public-config.json', JSON.stringify(publicConfig, null, 2));
-    console.log("\n💾 Configuração pública salva em 'public-config.json'");
+    const publicConfigFile = path.join(__dirname, '..', '..', 'config', 'public-config.json');
+    fs.writeFileSync(publicConfigFile, JSON.stringify(publicConfig, null, 2));
+    console.log("\n💾 Configuração pública salva em 'blockchain/config/public-config.json'");
     console.log("\n" + "=".repeat(50));
     console.log("🎉 DEPLOY CONCLUÍDO COM SUCESSO!");
     console.log("=".repeat(50));

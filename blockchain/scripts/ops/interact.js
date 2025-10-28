@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const {getContractConfig, encryptVote, validateEncryptedVote } = require('./elgamal-utils');
+const {getContractConfig, encryptVote, validateEncryptedVote } = require('../core/elgamal-utils');
 const fs = require('fs');
 require('dotenv').config();
 
