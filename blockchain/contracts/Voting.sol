@@ -45,6 +45,9 @@ contract Ballot {
     bool public resultsPublished;
     uint256[] public finalVoteCounts;
 
+    enum ElectionPhase { Registration, Voting, Ended }
+    ElectionPhase public phase;
+
 // ======================== EVENTOS ========================
     event VoteSubmitted(
         uint256[] c1_values,
@@ -101,6 +104,7 @@ contract Ballot {
         totalAuthorizedVoters = 0;
         votingEnded = false;
         resultsPublished = false;
+        phase = ElectionPhase.Registration;
 
         for (uint i = 0; i < _authorizedRelayers.length; i++) {
             authorizedRelayers[_authorizedRelayers[i]] = true;
@@ -110,7 +114,12 @@ contract Ballot {
         emit ElGamalParametersSet(_p, _g, _h);
     }
 
-// ======================== FUNÇÕES DE VOTAÇÃO ========================
+    function setPhase(ElectionPhase _phase) external onlyAdmin() {
+    //require(uint8(_phase) >= uint8(phase), "Nao e possivel voltar fases");
+    phase = _phase;
+    }
+
+// ======================== FUNÇÕES DE AUTORIZAÇÃO ========================
 
 // Check if a CPF hash has been used
 function checkCPFStatus(bytes32 cpfHash) public view returns (bool isUsed) {
@@ -119,6 +128,7 @@ function checkCPFStatus(bytes32 cpfHash) public view returns (bool isUsed) {
 
 // Register a new voter with their CPF hash
 function registerVoterWithCPF(address voterAddress, bytes32 cpfHash) public onlyAdmin {
+    require(phase == ElectionPhase.Registration, "Cadastro encerrado");
     require(voterAddress != address(0), "Invalid voter address");
     require(cpfHash != bytes32(0), "Invalid CPF hash");
     require(!cpfUsed[cpfHash], "CPF already used");
@@ -160,6 +170,7 @@ function getVoterCPFHash(address voter) public view returns (bytes32) {
         address _voter
     ) public votingActive {
 
+        require(phase == ElectionPhase.Voting, "Votacao nao iniciada ou encerrada");
         require(authorizedRelayers[msg.sender], "Relayer nao autorizado");
 
         // Reconstrói o hash dos dados do voto
@@ -251,10 +262,12 @@ function getVoterCPFHash(address voter) public view returns (bytes32) {
     
 // ======================== FUNÇÕES DE CONSULTA ========================   
     function getTotalVotes() public view returns (uint256) {
+        require(phase == ElectionPhase.Ended, "Resultado disponivel apenas ao final");
         return encryptedVotes.length;
     }
 
     function getAllEncryptedVotes() public view returns (EncryptedVote[] memory) {
+        require(phase == ElectionPhase.Ended, "Resultado disponivel apenas ao final");
         return encryptedVotes;
     }
     
@@ -298,6 +311,7 @@ function getVoterCPFHash(address voter) public view returns (bytes32) {
     }
     
     function getWinnerName() public view returns (string memory) {
+        require(phase == ElectionPhase.Ended, "Resultado disponivel apenas ao final");
         require(resultsPublished, "Resultados nao publicados");
         return candidateNames[winningProposalIndex];
     }

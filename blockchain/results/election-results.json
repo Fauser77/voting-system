@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-15T20:04:15.096Z",
+  "timestamp": "2025-11-15T21:06:02.612Z",
   "votingEnded": true,
   "totalVotes": "1",
   "results": [
@@ -20,9 +20,9 @@
     }
   ],
   "participation": {
-    "authorized": "2",
+    "authorized": "1",
     "voted": "1",
-    "percentage": "50"
+    "percentage": "100"
   },
   "decodingMethod": "Helios-style (Baby-step Giant-step)"
 }
