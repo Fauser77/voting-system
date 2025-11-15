@@ -33,8 +33,12 @@ contract Ballot {
     mapping(address => Voter) public voters;
     mapping(address => bool) public authorizedRelayers;
 
+    // CPF Management
+    mapping(bytes32 => bool) public cpfUsed; // Track if CPF hash was already used
+    mapping(address => bytes32) public voterToCPF; // Link voter address to CPF hash
+
     // Para estatísticas futuras, sobretudo de participação
-    uint256 public immutable totalAuthorizedVoters;
+    uint256 public totalAuthorizedVoters;
 
     // Resultado final (preenchido após decifração off-chain)
     uint256 public winningProposalIndex;
@@ -54,6 +58,9 @@ contract Ballot {
     event RelayerAuthorized(address indexed relayer);
     event VotingEnded(uint256 timestamp);
     event ResultsPublished(uint256[] voteCounts, uint256 winnerIndex);
+
+    // Event for voter registration
+    event VoterRegistered(address indexed voter, bytes32 indexed cpfHash);
 
 // ======================== MODIFICADORES ========================
     modifier onlyAdmin() {
@@ -77,11 +84,9 @@ contract Ballot {
         uint256 _g,
         uint256 _h,
         string[] memory _candidateNames,
-        address[] memory _authorizedVoters,
         address[] memory _authorizedRelayers
     ) {
         require(_candidateNames.length > 0, "Minimo 1 candidato");
-        require(_authorizedVoters.length > 0, "Minimo 1 eleitor");
         require(_authorizedRelayers.length > 0, "Minimo 1 relayer");
         require(_p > 1000000, "P deve ser maior que 1 milhao para seguranca");
         require(_h < _p, "H deve ser menor que P");
@@ -93,15 +98,10 @@ contract Ballot {
         h = _h;
         numCandidates = _candidateNames.length;
         candidateNames = _candidateNames;
-        totalAuthorizedVoters = _authorizedVoters.length;
+        totalAuthorizedVoters = 0;
         votingEnded = false;
         resultsPublished = false;
-        
-        for (uint i = 0; i < _authorizedVoters.length; i++) {
-            voters[_authorizedVoters[i]].hasRightToVote = true;
-            emit VoterAuthorized(_authorizedVoters[i]);
-        }
-        
+
         for (uint i = 0; i < _authorizedRelayers.length; i++) {
             authorizedRelayers[_authorizedRelayers[i]] = true;
             emit RelayerAuthorized(_authorizedRelayers[i]);
@@ -111,12 +111,73 @@ contract Ballot {
     }
 
 // ======================== FUNÇÕES DE VOTAÇÃO ========================
+
+// Check if a CPF hash has been used
+function checkCPFStatus(bytes32 cpfHash) public view returns (bool isUsed) {
+    return cpfUsed[cpfHash];
+}
+
+// Register a new voter with their CPF hash
+function registerVoterWithCPF(address voterAddress, bytes32 cpfHash) public onlyAdmin {
+    require(voterAddress != address(0), "Invalid voter address");
+    require(cpfHash != bytes32(0), "Invalid CPF hash");
+    require(!cpfUsed[cpfHash], "CPF already used");
+
+    // Mark CPF as used
+    cpfUsed[cpfHash] = true;
+    
+    // Link voter to CPF
+    voterToCPF[voterAddress] = cpfHash;
+    
+    voters[voterAddress].hasRightToVote = true;
+
+    // Emit event
+    emit VoterRegistered(voterAddress, cpfHash);
+    emit VoterAuthorized(voterAddress);
+}
+
+// Optional: Get CPF hash for a voter
+function getVoterCPFHash(address voter) public view returns (bytes32) {
+    return voterToCPF[voter];
+}
+
+// // Optional: Batch register multiple voters (useful for initial setup)
+// function batchRegisterVoters(address[] memory voters, bytes32[] memory cpfHashes) public onlyAdmin {
+//     require(voters.length == cpfHashes.length, "Arrays must have same length");
+    
+//     for (uint i = 0; i < voters.length; i++) {
+//         registerVoterWithCPF(voters[i], cpfHashes[i]);
+//     }
+// }
+
+// ======================== FUNÇÕES DE VOTAÇÃO ========================
     function submitEncryptedVote(
         uint256[] memory _c1_values,
         uint256[] memory _c2_values,
+        bytes memory _signature,
         address _voter
     ) public votingActive {
+
         require(authorizedRelayers[msg.sender], "Relayer nao autorizado");
+
+        // Reconstrói o hash dos dados do voto
+        bytes32 messageHash = keccak256(abi.encodePacked(
+            _c1_values,
+            _c2_values
+        ));
+
+        // Adiciona prefixo Ethereum para segurança
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            messageHash
+        ));
+
+        // Recupera o endereço do assinante
+        address signer = recoverSigner(ethSignedMessageHash, _signature);
+
+        // Verifica se a assinatura corresponde ao eleitor informado
+        require(signer == _voter, "Assinatura invalida para este eleitor");
+ 
         require(voters[_voter].hasRightToVote, "Eleitor nao autorizado");
         require(!voters[_voter].hasVoted, "Eleitor ja votou");
         require(_c1_values.length == numCandidates, "Numero incorreto de C1");
@@ -143,6 +204,26 @@ contract Ballot {
             block.timestamp,
             msg.sender
         );
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature) 
+        internal 
+        pure 
+        returns (address) 
+    {
+        require(_signature.length == 65, "Assinatura invalida");
+        
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        assembly {
+            r := mload(add(_signature, 32))
+            s := mload(add(_signature, 64))
+            v := byte(0, mload(add(_signature, 96)))
+        }
+        
+        return ecrecover(_ethSignedMessageHash, v, r, s);
     }
 
 // ======================== FUNÇÕES DE ENCERRAMENTO ========================

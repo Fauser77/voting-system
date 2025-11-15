@@ -1,28 +1,28 @@
 {
-  "timestamp": "2025-10-28T16:53:12.700Z",
+  "timestamp": "2025-11-15T19:15:48.464Z",
   "votingEnded": true,
-  "totalVotes": "4",
+  "totalVotes": "2",
   "results": [
     {
       "candidate": "Maria Silva",
-      "votes": "1",
+      "votes": "0",
       "verified": true
     },
     {
       "candidate": "João Santos",
-      "votes": "2",
+      "votes": "0",
       "verified": true
     },
     {
       "candidate": "Ana Costa",
-      "votes": "1",
+      "votes": "0",
       "verified": true
     }
   ],
   "participation": {
-    "authorized": "8",
-    "voted": "4",
-    "percentage": "50"
+    "authorized": "0",
+    "voted": "2",
+    "percentage": "0"
   },
   "decodingMethod": "Helios-style (Baby-step Giant-step)"
 }

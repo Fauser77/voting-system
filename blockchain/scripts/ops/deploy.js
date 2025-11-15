@@ -101,7 +101,6 @@ async function main() {
         params.g.toString(), 
         params.h.toString(),
         candidateNames,
-        authorizedVoters,
         authorizedRelayers
     );
     

@@ -1,5 +1,5 @@
 {
-  "contract": "0x78820d1D32414e8Ec18B0346cE7a9Ea779B50939",
+  "contract": "0x11Ac9a244A4468C4E12fF2f3593e32f2aABa8c92",
   "network": "poa",
   "candidateNames": [
     "Maria Silva",
@@ -13,8 +13,8 @@
     "h": "17554745303297698767349376234016072990405091619223930074233838865280794201144",
     "bits": 256
   },
-  "votingStarted": "2025-10-28T15:59:03.465Z",
-  "blockNumber": 2450,
+  "votingStarted": "2025-11-15T18:27:31.167Z",
+  "blockNumber": 3236,
   "chainId": 12345,
   "rpcUrl": "http://127.0.0.1:8545"
 }

@@ -1,5 +1,6 @@
 const hre = require("hardhat");
 const {getContractConfig, encryptVote, validateEncryptedVote } = require('../core/elgamal-utils');
+const { signVoteData, validatePrivateKey } = require('../core/signature-utils');
 const fs = require('fs');
 require('dotenv').config();
 
@@ -41,10 +42,22 @@ async function validateVoter(contract, voterAddress) {
 
 // ==================== FUNÇÃO PRINCIPAL DE VOTAÇÃO ====================
 
-async function submitVote(voterAddress, candidateIndex) {
+async function submitVote(voterPrivateKey, candidateIndex) {
     try {
         const config = await getContractConfig();
         
+        // Valida a chave privada do eleitor
+        const keyValidation = validatePrivateKey(voterPrivateKey);
+        if (!keyValidation.valid) {
+            return {
+                success: false,
+                error: keyValidation.error
+            };
+        }
+        
+        const voterAddress = keyValidation.address;
+        console.log(`🔐 Eleitor identificado: ${voterAddress}`);
+
         if (candidateIndex < 0 || candidateIndex >= config.numCandidates) {
             return {
                 success: false,
@@ -68,7 +81,19 @@ async function submitVote(voterAddress, candidateIndex) {
             throw new Error(`Erro na cifragem: ${validation.error}`);
         }
         console.log("✅ Cifragem validada");
+
+        // Prepara os dados do voto para assinatura
+        const voteData = {
+            c1_values,
+            c2_values
+        };
         
+        // Gera a assinatura digital com a chave privada do ELEITOR
+        console.log("✍️ Eleitor assinando voto digitalmente...");
+        const signature = await signVoteData(voteData, voterPrivateKey);
+        console.log("✅ Assinatura do eleitor gerada");
+
+        //Usa o RELAYER para submeter a transação
         const relayerPrivateKey = process.env.RELAYER_PRIVATE_KEY;
         if (!relayerPrivateKey || relayerPrivateKey.length !== 66) { // 0x + 64 chars
             throw new Error("Chave privada do relayer inválida ou não configurada");
@@ -79,10 +104,11 @@ async function submitVote(voterAddress, candidateIndex) {
         
         const relayerWallet = new hre.ethers.Wallet(relayerPrivateKey, hre.ethers.provider);
         
-        console.log("📤 Enviando voto para blockchain...");
+        console.log("📤 Relayer enviando voto para blockchain...");
         const tx = await config.contract.connect(relayerWallet).submitEncryptedVote(
             c1_values,
             c2_values,
+            signature,
             voterAddress
         );
         
@@ -99,7 +125,9 @@ async function submitVote(voterAddress, candidateIndex) {
             txHash: receipt.hash,
             blockNumber: receipt.blockNumber,
             gasUsed: receipt.gasUsed.toString(),
-            candidate: config.candidateNames[candidateIndex]
+            candidate: config.candidateNames[candidateIndex],
+            voter: voterAddress,
+            relayer: relayerWallet.address
         };
         
     } catch (error) {
@@ -138,11 +166,23 @@ if (require.main === module) {
             config.candidateNames.forEach((name, idx) => {
                 console.log(`   ${idx + 1}. ${name}`);
             });
+
+            // Solicita a chave privada do eleitor
+            console.log("\n ATENÇÃO: Sua chave privada não será armazenada.");
+            const privateKey = await question("\n🔑 Chave privada do eleitor (0x...): ");
             
-            const voterAddress = await question("\n🔍 Endereço do eleitor: ");
+            // Valida a chave privada
+            const keyValidation = validatePrivateKey(privateKey);
+            if (!keyValidation.valid) {
+                console.log(`\n❌ ${keyValidation.error}`);
+                rl.close();
+                process.exit(1);
+            }
             
+            console.log(`\n✅ Chave válida. Endereço: ${keyValidation.address}`);
+
             try {
-                await validateVoter(config.contract, voterAddress);
+                await validateVoter(config.contract, keyValidation.address);
                 console.log("✅ Eleitor autorizado e pode votar");
             } catch (error) {
                 console.log(`\n❌ ${error.message}`);
@@ -154,7 +194,7 @@ if (require.main === module) {
             const candidateIndex = parseInt(choice) - 1;
             
             console.log("\n⏳ Processando voto...");
-            const result = await submitVote(voterAddress, candidateIndex);
+            const result = await submitVote(privateKey, candidateIndex);
             
             if (result.success) {
                 console.log("\n✅ VOTO REGISTRADO COM SUCESSO!");
@@ -162,6 +202,8 @@ if (require.main === module) {
                 console.log(`📦 Bloco: ${result.blockNumber}`);
                 console.log(`⛽ Gas usado: ${result.gasUsed}`);
                 console.log(`👤 Candidato: ${result.candidate}`);
+                console.log(`🔐 Eleitor: ${result.voter}`);
+                console.log(`🔄 Submetido via Relayer: ${result.relayer}`);
             } else {
                 console.log(`\n❌ Erro: ${result.error}`);
             }
