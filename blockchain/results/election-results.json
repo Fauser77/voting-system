@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-11-15T19:44:51.197Z",
+  "timestamp": "2025-11-15T20:04:15.096Z",
   "votingEnded": true,
-  "totalVotes": "2",
+  "totalVotes": "1",
   "results": [
     {
       "candidate": "Maria Silva",
-      "votes": "0",
+      "votes": "1",
       "verified": true
     },
     {
@@ -20,9 +20,9 @@
     }
   ],
   "participation": {
-    "authorized": "0",
-    "voted": "2",
-    "percentage": "0"
+    "authorized": "2",
+    "voted": "1",
+    "percentage": "50"
   },
   "decodingMethod": "Helios-style (Baby-step Giant-step)"
 }

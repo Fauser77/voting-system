@@ -131,6 +131,8 @@ function registerVoterWithCPF(address voterAddress, bytes32 cpfHash) public only
     
     voters[voterAddress].hasRightToVote = true;
 
+    totalAuthorizedVoters++; 
+
     // Emit event
     emit VoterRegistered(voterAddress, cpfHash);
     emit VoterAuthorized(voterAddress);

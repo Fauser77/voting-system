@@ -307,7 +307,7 @@ async function main() {
         
         // 1. Carregar configuração e conectar ao contrato
         const config = await getContractConfig();
-        console.log(`\n📋 Contrato: ${config.contract}`);
+        console.log(`\n📋 Contrato: ${config.contract.target}`);
         
         // 2. Obter status atualizado diretamente do contrato
         const votingStatus = await config.contract.getVotingStatus();
