@@ -1,19 +1,14 @@
 {
-  "name": "voting-system-frontend",
-  "version": "0.1.0",
+  "name": "blockchain-voting-frontend",
+  "version": "1.0.0",
+  "description": "Frontend React para sistema de votação blockchain",
   "private": true,
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/material": "^5.14.10",
-    "@mui/icons-material": "^5.14.10",
-    "@mui/x-charts": "^6.0.0",
-    "ethers": "^6.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.15.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^3.4.0"
+    "axios": "^1.6.2",
+    "ethers": "^6.9.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -23,8 +18,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {

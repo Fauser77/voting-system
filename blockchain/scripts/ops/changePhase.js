@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const readline = require("readline");
 
 async function main() {
-    const contractAddress = "0x6f576CE3bdF91505Cf725DBbAC850F600D985Bf1"; // Ajuste aqui
+    const contractAddress = "0x22f9Bdb93E73120DfFa5094D8bb6e1f6f6BD641e"; // Ajuste aqui
     
     const Voting = await hre.ethers.getContractFactory("Ballot");
     const voting = await Voting.attach(contractAddress);
