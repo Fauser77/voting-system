@@ -1,0 +1,377 @@
+/* Reutiliza estilos de AuthorizationForm.css e adiciona específicos */
+
+.voting-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.voting-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 700px;
+  overflow: hidden;
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.step-header h2 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.step-header p {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Candidatos */
+.candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.candidate-card {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+}
+
+.candidate-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+.candidate-card.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.candidate-number {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-right: 1.5rem;
+  flex-shrink: 0;
+}
+
+.candidate-info {
+  flex: 1;
+}
+
+.candidate-info h3 {
+  margin: 0 0 0.25rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.candidate-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.candidate-radio input {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+/* Chave Privada */
+.key-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.key-input {
+  flex: 1;
+  padding-right: 3rem;
+  font-family: monospace;
+}
+
+.toggle-key-button {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.toggle-key-button:hover {
+  opacity: 0.7;
+}
+
+/* Confirmação */
+.confirmation-card {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.confirmation-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.confirmation-card h3 {
+  color: #2e7d32;
+  margin-bottom: 1rem;
+}
+
+.selected-candidate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.candidate-number-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.selected-candidate h2 {
+  margin: 0;
+  color: #333;
+}
+
+.warning-box.critical {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+}
+
+.confirm-button {
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Sucesso */
+.success-screen {
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.success-details {
+  margin: 2rem 0;
+}
+
+.voted-candidate {
+  padding: 1rem;
+  background: #e8f5e9;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.voted-candidate strong {
+  font-size: 1.5rem;
+  color: #2e7d32;
+}
+
+.transaction-info {
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.transaction-info label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.tx-hash-display {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.tx-hash-display code {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  color: #333;
+}
+
+.copy-button {
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.copy-button:hover {
+  background: #5568d3;
+}
+
+.success-message {
+  background: #e3f2fd;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.success-message p {
+  margin: 0;
+  line-height: 1.8;
+  color: #1976d2;
+}
+
+/* Botões */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.back-button {
+  flex: 1;
+  padding: 1rem;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.back-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading Steps */
+.loading-steps {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.loading-steps .step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.loading-steps .step.active {
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .voting-container {
+    padding: 1rem;
+  }
+
+  .voting-card {
+    max-width: 100%;
+  }
+
+  .candidate-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .candidate-number {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+.address-input {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.address-input::placeholder {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto';
+  letter-spacing: normal;
+}
+}

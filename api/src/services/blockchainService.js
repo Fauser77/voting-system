@@ -46,13 +46,19 @@ class BlockchainService {
       // Setup wallet admin
       this.adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, this.provider);
       
-      // ABI mínimo necessário
+      // ABI expandido com todas as funções necessárias
       const CONTRACT_ABI = [
         "function checkCPFStatus(bytes32 cpfHash) view returns (bool isUsed)",
         "function registerVoterWithCPF(address voterAddress, bytes32 cpfHash)",
+        "function submitEncryptedVote(uint256[] c1_values, uint256[] c2_values, bytes signature, address voter)",
         "function phase() view returns (uint8)",
         "function totalAuthorizedVoters() view returns (uint256)",
-        "event VoterRegistered(address indexed voter, bytes32 indexed cpfHash)"
+        "function hasRightToVote(address voter) view returns (bool)",
+        "function hasVoted(address voter) view returns (bool)",
+        "function voterToCPF(address voter) view returns (bytes32)",
+        "function getProposalCount() view returns (uint256)",
+        "event VoterRegistered(address indexed voter, bytes32 indexed cpfHash)",
+        "event VoteSubmitted(uint256[] c1_values, uint256[] c2_values, uint256 timestamp, address indexed relayer)"
       ];
       
       // Conectar ao contrato
@@ -226,6 +232,106 @@ class BlockchainService {
         connected: false,
         error: error.message
       };
+    }
+  }
+
+  // ==================== MÉTODOS DE VOTAÇÃO ====================
+
+  /**
+   * Verifica se eleitor tem direito de voto
+   */
+  async hasRightToVote(voterAddress) {
+    try {
+      const hasRight = await this.contract.hasRightToVote(voterAddress);
+      return hasRight;
+    } catch (error) {
+      console.error('Erro ao verificar direito de voto:', error);
+      throw new Error(`Erro ao verificar direito de voto: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verifica se eleitor já votou
+   */
+  async hasVoted(voterAddress) {
+    try {
+      const voted = await this.contract.hasVoted(voterAddress);
+      return voted;
+    } catch (error) {
+      console.error('Erro ao verificar se votou:', error);
+      throw new Error(`Erro ao verificar se eleitor votou: ${error.message}`);
+    }
+  }
+
+  /**
+   * Busca lista de candidatos
+   */
+  async getCandidates() {
+    try {
+      const numCandidates = this.config.numCandidates;
+      const candidates = [];
+      
+      for (let i = 0; i < numCandidates; i++) {
+        candidates.push({
+          index: i,
+          name: this.config.candidateNames[i]
+        });
+      }
+      
+      return candidates;
+    } catch (error) {
+      throw new Error('Erro ao buscar candidatos');
+    }
+  }
+
+  /**
+   * Retorna parâmetros ElGamal
+   */
+  async getElGamalParams() {
+    return {
+      p: this.config.params.p.toString(),
+      g: this.config.params.g.toString(),
+      h: this.config.params.h.toString()
+    };
+  }
+
+  /**
+   * Submete voto cifrado via relayer
+   */
+  async submitVote(voterAddress, c1_values, c2_values, signature) {
+    try {
+      console.log('📤 Relayer submetendo voto...');
+      
+      // Usar a chave do relayer (segunda conta)
+      const relayerPrivateKey = process.env.RELAYER_PRIVATE_KEY;
+      if (!relayerPrivateKey) {
+        throw new Error('RELAYER_PRIVATE_KEY não configurada no .env');
+      }
+      
+      const relayerWallet = new ethers.Wallet(relayerPrivateKey, this.provider);
+      const contractWithRelayer = this.contract.connect(relayerWallet);
+      
+      console.log('🔄 Relayer:', relayerWallet.address);
+      
+      const tx = await contractWithRelayer.submitEncryptedVote(
+        c1_values,
+        c2_values,
+        signature,
+        voterAddress
+      );
+      
+      console.log('⏳ Aguardando confirmação...');
+      const receipt = await tx.wait();
+      
+      console.log('✅ Voto registrado');
+      return {
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      };
+    } catch (error) {
+      console.error('Erro detalhado ao submeter voto:', error);
+      throw new Error(`Erro ao submeter voto: ${error.message}`);
     }
   }
 }

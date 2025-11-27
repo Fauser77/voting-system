@@ -174,7 +174,7 @@ function getVoterCPFHash(address voter) public view returns (bytes32) {
         require(authorizedRelayers[msg.sender], "Relayer nao autorizado");
 
         // Reconstrói o hash dos dados do voto
-        bytes32 messageHash = keccak256(abi.encodePacked(
+        bytes32 messageHash = keccak256(abi.encode(
             _c1_values,
             _c2_values
         ));

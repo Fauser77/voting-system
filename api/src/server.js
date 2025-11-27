@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const blockchainService = require('./services/blockchainService');
 const authorizationRoutes = require('./routes/authorization');
+const votingRoutes = require('./routes/voting');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,6 +47,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/authorization', authorizationRoutes);
+app.use('/api/voting', votingRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -80,10 +82,15 @@ async function startServer() {
       console.log(`✅ API rodando na porta ${PORT}`);
       console.log(`   http://localhost:${PORT}`);
       console.log(`\n📋 Endpoints disponíveis:`);
+      console.log(`\n   🔐 Autorização:`);
       console.log(`   POST   /api/authorization/validate-cpf`);
       console.log(`   POST   /api/authorization/register`);
       console.log(`   GET    /api/authorization/stats`);
       console.log(`   GET    /api/authorization/health`);
+      console.log(`\n   🗳️  Votação:`);
+      console.log(`   POST   /api/voting/authenticate`);
+      console.log(`   POST   /api/voting/submit`);
+      console.log(`   GET    /api/voting/verify/:cpf`);
       console.log(`\n=== Sistema pronto ===\n`);
     });
 
