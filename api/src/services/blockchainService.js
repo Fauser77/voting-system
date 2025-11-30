@@ -57,6 +57,11 @@ class BlockchainService {
         "function hasVoted(address voter) view returns (bool)",
         "function voterToCPF(address voter) view returns (bytes32)",
         "function getProposalCount() view returns (uint256)",
+        "function getVote(uint256 _index) view returns (uint256[] c1_values, uint256[] c2_values, uint256 timestamp, address relayer)",
+        "function getTotalVotes() view returns (uint256)",
+        "function getVoterStats() view returns (uint256 totalAuthorized, uint256 totalVoted, uint256 participationPercentage)",
+        "function getCandidate(uint256 _index) view returns (string name, uint256 voteCount)",
+        "function getWinnerName() view returns (string)",
         "event VoterRegistered(address indexed voter, bytes32 indexed cpfHash)",
         "event VoteSubmitted(uint256[] c1_values, uint256[] c2_values, uint256 timestamp, address indexed relayer)"
       ];
@@ -332,6 +337,153 @@ class BlockchainService {
     } catch (error) {
       console.error('Erro detalhado ao submeter voto:', error);
       throw new Error(`Erro ao submeter voto: ${error.message}`);
+    }
+  }
+
+  /**
+   * Busca voto específico por hash de transação
+   */
+  async searchVote(txHash) {
+    try {
+      console.log('🔍 Buscando transação...');
+      
+      const tx = await this.provider.getTransaction(txHash);
+      
+      if (!tx) {
+        throw new Error('Transação não encontrada na blockchain');
+      }
+      
+      // Verificar se é uma transação para o contrato correto
+      if (tx.to.toLowerCase() !== this.contract.target.toLowerCase()) {
+        throw new Error(
+          `Transação inválida! ` +
+          `A transação foi enviada para: ${tx.to} ` +
+          `Contrato de votação esperado: ${this.contract.target}`
+        );
+      }
+      
+      const receipt = await this.provider.getTransactionReceipt(txHash);
+      
+      if (!receipt) {
+        throw new Error('Receipt da transação não encontrado');
+      }
+      
+      if (receipt.status !== 1) {
+        throw new Error('A transação falhou na blockchain');
+      }
+      
+      const block = await this.provider.getBlock(tx.blockNumber);
+      
+      console.log('📦 Bloco:', block.number);
+      console.log('⏰ Timestamp:', new Date(block.timestamp * 1000).toISOString());
+      
+      // Buscar o evento de voto específico
+      const filter = this.contract.filters.VoteSubmitted();
+      const events = await this.contract.queryFilter(filter, block.number, block.number);
+      
+      const voteEvent = events.find(e => e.transactionHash === txHash);
+      
+      if (!voteEvent) {
+        throw new Error('Esta transação não contém um evento de voto válido');
+      }
+      
+      // Encontrar índice do voto
+      const allEvents = await this.contract.queryFilter(filter, 0, block.number);
+      const voteIndex = allEvents.findIndex(e => e.transactionHash === txHash);
+      
+      if (voteIndex === -1) {
+        throw new Error('Erro ao determinar o índice do voto no contrato');
+      }
+      
+      const voteData = await this.contract.getVote(voteIndex);
+      
+      console.log('✓ Voto #' + (voteIndex + 1) + ' encontrado');
+      
+      return {
+        txHash,
+        blockNumber: block.number,
+        blockHash: block.hash,
+        voteIndex: voteIndex + 1,
+        timestamp: new Date(Number(voteData[2]) * 1000).toISOString(),
+        relayer: voteData[3],
+        encryptedValues: this.config.candidateNames.map((name, idx) => ({
+          candidate: name,
+          c1: voteData[0][idx].toString(),
+          c2: voteData[1][idx].toString()
+        })),
+        confirmations: await this.provider.getBlockNumber() - block.number
+      };
+      
+    } catch (error) {
+      console.error('Erro ao buscar voto:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtém resultados finais da eleição
+   * Requer fase Ended
+   */
+  async getElectionResults() {
+    try {
+      console.log('📊 Processando resultados da eleição...');
+
+      // Verificar se votação encerrou
+      const phase = await this.contract.phase();
+      const phaseNumber = Number(phase);
+      console.log(`   Fase retornada pelo contrato: ${phase} (tipo: ${typeof phase})`);
+      console.log(`   Fase convertida: ${phaseNumber}`);
+      if (phase !== 2) {
+        throw new Error('Eleição ainda não foi encerrada');
+      }
+
+      // Obter total de votos
+      const totalVotes = await this.contract.getTotalVotes();
+      console.log(`📮 Total de votos: ${totalVotes}`);
+
+      // Obter estatísticas de eleitores
+      const voterStats = await this.contract.getVoterStats();
+      console.log(`👥 Eleitores autorizados: ${voterStats.totalAuthorized}`);
+      console.log(`✅ Participação: ${voterStats.participationPercentage}%`);
+
+      // Buscar resultados de cada candidato
+      const candidateResults = [];
+      for (let i = 0; i < this.config.numCandidates; i++) {
+        const candidateData = await this.contract.getCandidate(i);
+        candidateResults.push({
+          index: i,
+          name: candidateData.name,
+          voteCount: candidateData.voteCount.toString()
+        });
+        console.log(`  ${candidateData.name}: ${candidateData.voteCount} votos`);
+      }
+
+      // Buscar vencedor
+      const winnerName = await this.contract.getWinnerName();
+      const winner = candidateResults.find(c => c.name === winnerName);
+      
+      console.log(`\n🏆 Vencedor: ${winnerName}`);
+
+      return {
+        timestamp: new Date().toISOString(),
+        votingEnded: true,
+        totalVotes: totalVotes.toString(),
+        candidates: candidateResults,
+        winner: {
+          name: winnerName,
+          index: winner.index,
+          voteCount: winner.voteCount
+        },
+        participation: {
+          authorized: voterStats.totalAuthorized.toString(),
+          voted: voterStats.totalVoted.toString(),
+          percentage: voterStats.participationPercentage.toString()
+        }
+      };
+
+    } catch (error) {
+      console.error('Erro ao obter resultados:', error);
+      throw error;
     }
   }
 }

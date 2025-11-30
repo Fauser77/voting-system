@@ -8,6 +8,9 @@ import PrivateKeyInput from './PrivateKeyInput';
 import VoteConfirmation from './VoteConfirmation';
 import VoteSuccess from './VoteSuccess';
 import './VotingForm.css';
+import VoteSearch from './VoteSearch';
+import ElectionResults from '../Results/ElectionResults';
+
 
 const STEPS = {
   ADDRESS_AUTH: 0,
@@ -26,6 +29,9 @@ const VotingForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [txHash, setTxHash] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
 
   const handleAddressSubmit = async (address) => {
     setLoading(true);
@@ -160,6 +166,26 @@ const VotingForm = () => {
         <div className="header">
           <h1>Votação Eletrônica</h1>
           <p>Sistema Seguro de Votação via Blockchain</p>
+
+          {/* Adicionar este botão de consulta no header */}
+          <button 
+            onClick={() => setShowSearch(true)}
+            className="header-search-button"
+            type="button"
+          >
+            <span className="search-icon">🔍</span>
+            Consultar Voto na Blockchain
+          </button>
+
+          <button 
+            onClick={() => setShowResults(true)}
+            className="header-results-button"
+            type="button"
+          >
+            <span className="results-icon">📊</span>
+            Ver Resultados da Eleição
+          </button>
+
         </div>
 
         {currentStep === STEPS.ADDRESS_AUTH && (
@@ -213,6 +239,14 @@ const VotingForm = () => {
         <p>Sistema de Votação Eletrônica via Blockchain</p>
         <p>Seu voto é criptografado e anônimo</p>
       </footer>
+
+      {showSearch && (
+        <VoteSearch onClose={() => setShowSearch(false)} />
+      )}
+
+      {showResults && (
+        <ElectionResults onClose={() => setShowResults(false)} />
+      )}
     </div>
   );
 };

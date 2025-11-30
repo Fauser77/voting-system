@@ -213,4 +213,89 @@ router.get('/verify/:address', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/voting/search/:txHash
+ * Busca voto específico por hash de transação
+ */
+router.get('/search/:txHash', async (req, res) => {
+  try {
+    const { txHash } = req.params;
+
+    console.log('\n=== BUSCA DE VOTO ===');
+    console.log('📍 TX Hash:', txHash);
+
+    if (!txHash || !txHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+      console.log('❌ Hash inválido');
+      return res.status(400).json({
+        success: false,
+        error: 'Hash de transação inválido. Deve ter 66 caracteres (0x + 64 hex)'
+      });
+    }
+
+    // Buscar voto
+    const voteInfo = await blockchainService.searchVote(txHash);
+
+    if (!voteInfo) {
+      console.log('❌ Voto não encontrado');
+      return res.status(404).json({
+        success: false,
+        error: 'Voto não encontrado para este hash de transação'
+      });
+    }
+
+    console.log('✅ Voto encontrado\n');
+
+    return res.json({
+      success: true,
+      vote: voteInfo
+    });
+
+  } catch (error) {
+    console.error('❌ Erro em search:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar voto'
+    });
+  }
+});
+
+/**
+ * GET /api/voting/results
+ * Retorna resultados finais da eleição
+ */
+router.get('/results', async (req, res) => {
+  try {
+    console.log('\n=== RESULTADOS DA ELEIÇÃO ===');
+
+    // Verificar fase
+    const phase = await blockchainService.getCurrentPhase();
+    console.log('📊 Fase atual:', phase.phaseName);
+
+    if (phase.phaseNumber !== 2) {
+      console.log('⚠️ Resultados só disponíveis após encerramento');
+      return res.status(400).json({
+        success: false,
+        error: `Resultados disponíveis apenas após o encerramento da votação. Fase atual: ${phase.phaseName}`
+      });
+    }
+
+    // Buscar resultados
+    const results = await blockchainService.getElectionResults();
+
+    console.log('✅ Resultados obtidos\n');
+
+    return res.json({
+      success: true,
+      results
+    });
+
+  } catch (error) {
+    console.error('❌ Erro em results:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Erro ao buscar resultados da eleição'
+    });
+  }
+});
+
 module.exports = router;

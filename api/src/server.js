@@ -90,7 +90,9 @@ async function startServer() {
       console.log(`\n   🗳️  Votação:`);
       console.log(`   POST   /api/voting/authenticate`);
       console.log(`   POST   /api/voting/submit`);
-      console.log(`   GET    /api/voting/verify/:cpf`);
+      console.log(`   GET    /api/voting/verify/:address`);
+      console.log(`   GET    /api/voting/search/:txHash`);
+      console.log(`   GET    /api/voting/results`);
       console.log(`\n=== Sistema pronto ===\n`);
     });
 
