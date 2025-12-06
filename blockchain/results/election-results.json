@@ -1,25 +1,26 @@
 {
-  "timestamp": "2025-12-06T17:52:13.385Z",
+  "timestamp": "2025-12-06T19:59:08.064Z",
   "votingEnded": true,
-  "totalVotes": "1",
+  "resultsPublished": true,
+  "totalVotes": "6",
   "winner": "Maria Silva",
   "candidates": [
     {
       "name": "Maria Silva",
-      "voteCount": "1"
+      "voteCount": "3"
     },
     {
       "name": "João Santos",
-      "voteCount": "0"
+      "voteCount": "2"
     },
     {
       "name": "Ana Costa",
-      "voteCount": "0"
+      "voteCount": "1"
     }
   ],
   "participation": {
-    "authorized": "1",
-    "voted": "1",
+    "authorized": "6",
+    "voted": "6",
     "percentage": "100"
   },
   "decodingMethod": "Helios-style (Baby-step Giant-step)"
