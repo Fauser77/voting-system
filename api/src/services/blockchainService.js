@@ -62,6 +62,9 @@ class BlockchainService {
         "function getVoterStats() view returns (uint256 totalAuthorized, uint256 totalVoted, uint256 participationPercentage)",
         "function getCandidate(uint256 _index) view returns (string name, uint256 voteCount)",
         "function getWinnerName() view returns (string)",
+        "function getVotingStatus() view returns (bool isEnded, bool hasResults, uint256 totalVotes, uint256 totalCandidates)",
+        "function votingEnded() view returns (bool)",
+        "function resultsPublished() view returns (bool)",
         "event VoterRegistered(address indexed voter, bytes32 indexed cpfHash)",
         "event VoteSubmitted(uint256[] c1_values, uint256[] c2_values, uint256 timestamp, address indexed relayer)"
       ];
@@ -433,7 +436,7 @@ class BlockchainService {
       const phaseNumber = Number(phase);
       console.log(`   Fase retornada pelo contrato: ${phase} (tipo: ${typeof phase})`);
       console.log(`   Fase convertida: ${phaseNumber}`);
-      if (phase !== 2) {
+      if (phaseNumber !== 2) {
         throw new Error('Eleição ainda não foi encerrada');
       }
 
@@ -451,7 +454,6 @@ class BlockchainService {
       for (let i = 0; i < this.config.numCandidates; i++) {
         const candidateData = await this.contract.getCandidate(i);
         candidateResults.push({
-          index: i,
           name: candidateData.name,
           voteCount: candidateData.voteCount.toString()
         });
@@ -469,11 +471,7 @@ class BlockchainService {
         votingEnded: true,
         totalVotes: totalVotes.toString(),
         candidates: candidateResults,
-        winner: {
-          name: winnerName,
-          index: winner.index,
-          voteCount: winner.voteCount
-        },
+        winner: winnerName,
         participation: {
           authorized: voterStats.totalAuthorized.toString(),
           voted: voterStats.totalVoted.toString(),

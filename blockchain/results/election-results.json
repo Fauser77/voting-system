@@ -1,22 +1,20 @@
 {
-  "timestamp": "2025-11-30T22:05:57.603Z",
+  "timestamp": "2025-12-06T17:52:13.385Z",
   "votingEnded": true,
   "totalVotes": "1",
-  "results": [
+  "winner": "Maria Silva",
+  "candidates": [
     {
-      "candidate": "Maria Silva",
-      "votes": "1",
-      "verified": true
+      "name": "Maria Silva",
+      "voteCount": "1"
     },
     {
-      "candidate": "João Santos",
-      "votes": "0",
-      "verified": true
+      "name": "João Santos",
+      "voteCount": "0"
     },
     {
-      "candidate": "Ana Costa",
-      "votes": "0",
-      "verified": true
+      "name": "Ana Costa",
+      "voteCount": "0"
     }
   ],
   "participation": {

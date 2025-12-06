@@ -120,18 +120,11 @@ async function processElectionResults(config) {
     
     console.log(`Total de votos registrados: ${totalVotes}`);
     
-    // Obter estatísticas dos eleitores para o método Helios
+    // Obter estatísticas dos eleitores
     const voterStats = await config.contract.getVoterStats();
     const maxPossibleVotes = BigInt(voterStats.totalAuthorized);
     
     console.log(`Total de eleitores autorizados: ${maxPossibleVotes}`);
-    
-    // Obter parâmetros ElGamal
-    const elgamalParams = {
-        p: BigInt(config.params.p),
-        g: BigInt(config.params.g),
-        h: BigInt(config.params.h)
-    };
     
     // Verificar se os resultados já foram publicados no contrato
     const votingStatus = await config.contract.getVotingStatus();
@@ -140,12 +133,13 @@ async function processElectionResults(config) {
         console.log("\n✅ Resultados já publicados no contrato!");
         console.log("\n🔍 Buscando resultados finais do contrato...");
         
-        const results = [];
+        // Buscar resultados do contrato
+        const candidates = [];
         for (let i = 0; i < config.candidateNames.length; i++) {
             const candidateData = await config.contract.getCandidate(i);
-            results.push({
-                candidate: candidateData.name,
-                votes: candidateData.voteCount.toString()
+            candidates.push({
+                name: candidateData.name,
+                voteCount: candidateData.voteCount.toString()
             });
             console.log(`  ${candidateData.name}: ${candidateData.voteCount} votos`);
         }
@@ -158,13 +152,14 @@ async function processElectionResults(config) {
         console.log(`  Total que votou: ${voterStats.totalVoted} eleitores`);
         console.log(`  Participação: ${voterStats.participationPercentage}%`);
         
+        // Construir resultado final UMA ÚNICA VEZ
         const finalResults = {
             timestamp: new Date().toISOString(),
             votingEnded: true,
             resultsPublished: true,
             totalVotes: totalVotes.toString(),
-            results: results,
             winner: winner,
+            candidates: candidates,
             participation: {
                 authorized: voterStats.totalAuthorized.toString(),
                 voted: voterStats.totalVoted.toString(),
@@ -172,20 +167,26 @@ async function processElectionResults(config) {
             }
         };
         
+        // Salvar UMA ÚNICA VEZ
         fs.writeFileSync(path.join(resultsDir, 'election-results.json'), JSON.stringify(finalResults, null, 2));
         console.log("\n💾 Resultados salvos em 'blockchain/results/election-results.json'");
+        
         return finalResults;
     }
     
-    // Se não há resultados publicados, buscar e processar votos
+    // ============ PROCESSAR VOTOS CIFRADOS ============
     console.log("\n📥 Coletando votos cifrados da blockchain...");
     
-    // Decidir estratégia baseado no número de votos
-    let votes = [];
+    // Obter parâmetros ElGamal
+    const elgamalParams = {
+        p: BigInt(config.params.p),
+        g: BigInt(config.params.g),
+        h: BigInt(config.params.h)
+    };
     
-    // Usar getAllEncryptedVotes para buscar todos de uma vez
+    // Coletar votos
+    let votes = [];
     console.log("  Coletando todos os votos de uma vez...");
-
     const allEncryptedVotes = await config.contract.getAllEncryptedVotes();
 
     for (let i = 0; i < allEncryptedVotes.length; i++) {
@@ -247,34 +248,14 @@ async function processElectionResults(config) {
     console.log("✓ Chave privada carregada do arquivo .env");
     
     // Decifrar resultados agregados usando método Helios
-    const results = await decryptAggregatedResults(
+    const decryptedResults = await decryptAggregatedResults(
         aggregated, 
         elgamalParams, 
-        maxPossibleVotes  // Usa número de eleitores, não total de votos
+        maxPossibleVotes
     );
     
-    // Salvar resultados finais
-    const finalResults = {
-        timestamp: new Date().toISOString(),
-        votingEnded: true,
-        totalVotes: totalVotes.toString(),
-        results: results.map(r => ({
-            candidate: r.candidate,
-            votes: r.votes.toString(),
-            verified: r.proofValid
-        })),
-        participation: {
-            authorized: voterStats.totalAuthorized.toString(),
-            voted: voterStats.totalVoted.toString(),
-            percentage: voterStats.participationPercentage.toString()
-        },
-        decodingMethod: "Helios-style (Baby-step Giant-step)"
-    };
-    
-    fs.writeFileSync(path.join(resultsDir, 'election-results.json'), JSON.stringify(finalResults, null, 2));
-    
     console.log("\n========== RESULTADO FINAL DA ELEIÇÃO ==========");
-    results.forEach(r => {
+    decryptedResults.forEach(r => {
         console.log(`${r.candidate}: ${r.votes} votos ${r.proofValid ? '✓' : '⚠️'}`);
     });
     
@@ -284,12 +265,59 @@ async function processElectionResults(config) {
     console.log(`  Taxa de participação: ${voterStats.participationPercentage}%`);
     
     // Determinar vencedor
-    const winner = results.reduce((prev, current) => 
+    const winner = decryptedResults.reduce((prev, current) => 
         (current.votes > prev.votes) ? current : prev
     );
     
     console.log(`\n🏆 VENCEDOR: ${winner.candidate} com ${winner.votes} votos!`);
+
+    // Publicar resultados no contrato ANTES de salvar
+    console.log("\n📤 Publicando resultados no contrato...");
+    try {
+        // Verificar se precisa encerrar votação
+        const currentStatus = await config.contract.getVotingStatus();
+        if (!currentStatus.isEnded) {
+            console.log("  Encerrando votação oficialmente no contrato...");
+            const endTx = await config.contract.endVoting();
+            await endTx.wait();
+            console.log("  ✓ Votação encerrada");
+        }
+        
+        // Publicar resultados
+        const voteCounts = decryptedResults.map(r => BigInt(r.votes));
+        const winnerIndex = decryptedResults.findIndex(r => r.candidate === winner.candidate);
+        
+        console.log("  Publicando resultados...");
+        const tx = await config.contract.publishResults(voteCounts, winnerIndex);
+        await tx.wait();
+        console.log("✅ Resultados publicados no contrato com sucesso!");
+        
+    } catch (error) {
+        console.error("⚠️ Erro ao publicar resultados no contrato:", error.message);
+        console.log("   Os resultados foram salvos localmente e podem ser publicados manualmente depois.");
+    }
+
+    // Construir resultado final UMA ÚNICA VEZ (padronizado com a estrutura acima)
+    const finalResults = {
+        timestamp: new Date().toISOString(),
+        votingEnded: true,
+        resultsPublished: true,
+        totalVotes: totalVotes.toString(),
+        winner: winner.candidate,
+        candidates: decryptedResults.map(r => ({
+            name: r.candidate,
+            voteCount: r.votes.toString()
+        })),
+        participation: {
+            authorized: voterStats.totalAuthorized.toString(),
+            voted: voterStats.totalVoted.toString(),
+            percentage: voterStats.participationPercentage.toString()
+        },
+        decodingMethod: "Helios-style (Baby-step Giant-step)"
+    };
     
+    // Salvar UMA ÚNICA VEZ
+    fs.writeFileSync(path.join(resultsDir, 'election-results.json'), JSON.stringify(finalResults, null, 2));
     console.log("\n💾 Resultados salvos em 'blockchain/results/election-results.json'");
     console.log("📝 Método de decodificação: Helios-style (Baby-step Giant-step)");
     
@@ -314,6 +342,9 @@ async function main() {
         const votingEnded = votingStatus.isEnded;
         const hasResults = votingStatus.hasResults;
         const totalVotes = votingStatus.totalVotes;
+        const currentPhase = await config.contract.phase();
+        const isPhaseEnded = Number(currentPhase) === 2;
+        const isVotingEnded = votingEnded || isPhaseEnded;
         
         console.log("\n📊 STATUS DO CONTRATO:");
         console.log(`  Votação encerrada: ${votingEnded ? 'SIM ✓' : 'NÃO ⏳'}`);
@@ -332,21 +363,21 @@ async function main() {
         const txHashFromArgs = args.find(arg => arg.startsWith('0x') && arg.length === 66);
 
         // 5. Decidir fluxo baseado no status da votação
-        if (votingEnded && hasResults) {
+        if (isVotingEnded && hasResults) {
             console.log("📄 Resultados já disponíveis em 'blockchain/results/election-results.json'");
             const results = JSON.parse(fs.readFileSync(path.join(resultsDir, 'election-results.json'), 'utf-8'));
             console.log(`\n🏆 Vencedor: ${results.winner}`);
             console.log(`📊 Participação: ${results.participation.percentage}%`);
             
-        } else if (votingEnded && !hasResults) {
+        } else if (isVotingEnded && !hasResults) {
             console.log("\n✅ Votação encerrada - aguardando publicação dos resultados");
             await processElectionResults(config);
             
         } else {
             console.log("\n⏳ Votação em andamento");
 
-            console.log("\n✅ Votação encerrada - aguardando publicação dos resultados");
-            await processElectionResults(config);
+            // console.log("\n✅ Votação encerrada - aguardando publicação dos resultados");
+            // await processElectionResults(config);
 
             // Mostrar estatísticas atuais
             const stats = await config.contract.getVoterStats();
@@ -367,9 +398,7 @@ async function main() {
                 output: process.stdout
             });
             
-            const statusMsg = votingEnded ? 
-                '\n📮 Digite o hash da transação para verificar (ou Enter para sair): ' :
-                '\n🗳️ Votação em andamento. Digite o hash para verificar seu voto (ou Enter para sair): ';
+            const statusMsg = '\n📮 Digite o hash da transação para verificar (ou Enter para sair): ';
             
             txHash = await new Promise(resolve => {
                 rl.question(statusMsg, resolve);

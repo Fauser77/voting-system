@@ -81,6 +81,25 @@ const ElectionResults = ({ onClose }) => {
     );
   }
 
+  if (!results || !results.candidates) {
+    return (
+      <div className="results-container">
+        <div className="results-modal">
+          <div className="loading-state">
+            <div className="spinner-large"></div>
+            <p>Processando resultados...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const getWinnerCandidate = () => {
+    return results.candidates.find(c => c.name === results.winner);
+  };
+
+  const winnerCandidate = getWinnerCandidate();
+
   return (
     <div className="results-container">
       <div className="results-modal large">
@@ -94,10 +113,12 @@ const ElectionResults = ({ onClose }) => {
           <div className="trophy-icon">🏆</div>
           <div className="winner-info">
             <h3>Vencedor(a)</h3>
-            <h2>{results.winner.name}</h2>
-            <p className="winner-votes">
-              {results.winner.voteCount} votos ({getProgressPercentage(results.winner.voteCount).toFixed(1)}%)
-            </p>
+            <h2>{results.winner}</h2>
+            {winnerCandidate && (
+              <p className="winner-votes">
+                {winnerCandidate.voteCount} votos ({getProgressPercentage(winnerCandidate.voteCount).toFixed(1)}%)
+              </p>
+            )}
           </div>
         </div>
 
@@ -144,7 +165,8 @@ const ElectionResults = ({ onClose }) => {
             {results.candidates
               .sort((a, b) => parseInt(b.voteCount) - parseInt(a.voteCount))
               .map((candidate, index) => {
-                const isWinner = candidate.name === results.winner.name;
+                console.log('🔍 Candidate:', candidate);
+                const isWinner = candidate.name === results.winner;
                 const percentage = getProgressPercentage(candidate.voteCount);
                 
                 return (
@@ -158,7 +180,7 @@ const ElectionResults = ({ onClose }) => {
                       </div>
                       <div className="candidate-details">
                         <h4>{candidate.name}</h4>
-                        <p>Candidato {candidate.index + 1}</p>
+                        <p>Candidato {index + 1}</p>
                       </div>
                       <div className="candidate-votes">
                         <span className="votes-number">{candidate.voteCount}</span>

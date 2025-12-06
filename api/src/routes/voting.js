@@ -271,7 +271,11 @@ router.get('/results', async (req, res) => {
     const phase = await blockchainService.getCurrentPhase();
     console.log('📊 Fase atual:', phase.phaseName);
 
-    if (phase.phaseNumber !== 2) {
+    // Permitir ver resultados se fase Ended (2) OU se já há resultados publicados
+    const votingStatus = await blockchainService.contract.getVotingStatus();
+    const canViewResults = phase.phaseNumber === 2 || votingStatus.hasResults;
+
+    if (!canViewResults) {
       console.log('⚠️ Resultados só disponíveis após encerramento');
       return res.status(400).json({
         success: false,
