@@ -13,14 +13,20 @@ async function signVoteData(voteData, privateKey) {
         const wallet = new ethers.Wallet(privateKey);
         
         // Cria o hash dos dados usando o mesmo método do contrato
-        const messageHash = ethers.solidityPackedKeccak256(
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+        const encodedData = abiCoder.encode(
             ["uint256[]", "uint256[]"],
             [voteData.c1_values, voteData.c2_values]
         );
         
-        // Assina o hash como um array de bytes
-        const messageBytes = ethers.toBeArray(messageHash);
-        const signature = await wallet.signMessage(messageBytes);
+        // Cria o hash dos dados encodados
+        const messageHash = ethers.keccak256(encodedData);
+        
+        // Remove o '0x' e converte para bytes
+        const messageHashBytes = ethers.getBytes(messageHash);
+        
+        // signMessage adiciona automaticamente o prefixo "\x19Ethereum Signed Message:\n32"
+        const signature = await wallet.signMessage(messageHashBytes);
         
         console.log("✅ Assinatura gerada com sucesso");
         return signature;

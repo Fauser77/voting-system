@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama de Sequência - Registro de Eleitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        
+        .diagram-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 1100px;
+            width: 100%;
+            margin-bottom: 50px;
+        }
+        
+        .diagram-title {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .diagram-subtitle {
+            text-align: center;
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .sequence-diagram {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        /* Atores */
+        .actors {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 0 40px;
+        }
+        
+        .actor {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 150px;
+            z-index: 10;
+        }
+        
+        .actor-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            border: 3px solid;
+            background: white;
+        }
+        
+        .actor-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #333;
+        }
+        
+        .actor-detail {
+            font-size: 0.75rem;
+            color: #777;
+        }
+        
+        .actor-eleitor .actor-icon { background: #e3f2fd; border-color: #1976d2; }
+        .actor-frontend .actor-icon { background: #e8f5e9; border-color: #388e3c; }
+        .actor-api .actor-icon { background: #fff3e0; border-color: #f57c00; }
+        .actor-blockchain .actor-icon { background: #f3e5f5; border-color: #8e24aa; }
+        
+        /* Linhas de vida */
+        .lifelines {
+            position: relative;
+            height: 950px; /* Aumentado para evitar atropelo */
+            display: flex;
+            justify-content: space-between;
+            padding: 0 115px; /* Ajustado para alinhar com centros dos atores */
+        }
+        
+        .lifeline {
+            width: 2px;
+            background: repeating-linear-gradient(to bottom, #ccc 0, #ccc 10px, transparent 10px, transparent 20px);
+            position: relative;
+        }
+        
+        /* Ativações */
+        .activation {
+            position: absolute;
+            width: 12px;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 2px;
+            left: -5px;
+            z-index: 2;
+        }
+        
+        .act-eleitor { background: #bbdefb; }
+        .act-frontend { background: #c8e6c9; }
+        .act-api { background: #ffe0b2; }
+        .act-blockchain { background: #e1bee7; }
+        
+        /* Mensagens */
+        .messages {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+        }
+        
+        .message {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+            z-index: 5;
+        }
+        
+        .message-line {
+            height: 2px;
+            background: #444;
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        .message-line.dashed {
+            background: none;
+            border-top: 2px dashed #666;
+        }
+        
+        .message-arrow {
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+        }
+        
+        .arrow-right { border-left: 10px solid #444; margin-left: -2px; }
+        .arrow-left { border-right: 10px solid #444; margin-right: -2px; }
+        
+        .message-label {
+            position: absolute;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-weight: 500;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .message-number {
+            display: inline-block;
+            background: #444;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 0.65rem;
+            margin-right: 6px;
+        }
+        
+        /* Fases e Divisores */
+        .phase-divider {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1;
+        }
+        
+        .phase-line { flex: 1; height: 1px; background: #ddd; }
+        .phase-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: #fdfdfd;
+            padding: 4px 15px;
+            border: 1px solid #eee;
+            border-radius: 20px;
+        }
+        
+        /* Notas e Boxes */
+        .note {
+            position: absolute;
+            background: #fffde7;
+            border: 1px solid #fbc02d;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 0.75rem;
+            width: 160px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .note-title { font-weight: 700; color: #f57f17; margin-bottom: 5px; }
+        
+        .privacy-box {
+            position: absolute;
+            border: 2px dashed #4caf50;
+            border-radius: 12px;
+            background: rgba(232, 245, 233, 0.4);
+            z-index: 1;
+        }
+        
+        .privacy-label {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4caf50;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .result-box {
+            position: absolute;
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 12px;
+            bottom: 20px;
+            left: 20px;
+            width: 220px;
+        }
+        
+        .result-title { font-weight: 700; color: #2e7d32; margin-bottom: 4px; font-size: 0.8rem;}
+        .result-content { font-family: monospace; font-size: 0.7rem; color: #1b5e20; }
+
+        /* Legenda */
+        .legend {
+            margin-top: 40px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            border: 1px solid #eee;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <h1 class="diagram-title">Fluxo de Registro de Eleitor</h1>
+        <p class="diagram-subtitle">Diagrama de Sequência — Autorização e Geração de Credenciais</p>
+        
+        <div class="sequence-diagram">
+            <div class="actors">
+                <div class="actor actor-eleitor"><div class="actor-icon">👤</div><div class="actor-name">Eleitor</div><div class="actor-detail">Cidadão</div></div>
+                <div class="actor actor-frontend"><div class="actor-icon">🌐</div><div class="actor-name">Frontend</div><div class="actor-detail">React App</div></div>
+                <div class="actor actor-api"><div class="actor-icon">🔄</div><div class="actor-name">API</div><div class="actor-detail">Node.js</div></div>
+                <div class="actor actor-blockchain"><div class="actor-icon">⛓️</div><div class="actor-name">Blockchain</div><div class="actor-detail">Smart Contract</div></div>
+            </div>
+            
+            <div class="lifelines">
+                <div class="lifeline"> <div class="activation act-eleitor" style="top: 40px; height: 60px;"></div>
+                    <div class="activation act-eleitor" style="top: 800px; height: 100px;"></div>
+                </div>
+                <div class="lifeline"> <div class="activation act-frontend" style="top: 50px; height: 160px;"></div>
+                    <div class="activation act-frontend" style="top: 350px; height: 250px;"></div>
+                    <div class="activation act-frontend" style="top: 720px; height: 150px;"></div>
+                </div>
+                <div class="lifeline"> <div class="activation act-api" style="top: 100px; height: 100px;"></div>
+                    <div class="activation act-api" style="top: 650px; height: 120px;"></div>
+                </div>
+                <div class="lifeline"> <div class="activation act-blockchain" style="top: 130px; height: 40px;"></div>
+                    <div class="activation act-blockchain" style="top: 700px; height: 40px;"></div>
+                </div>
+
+                <div class="messages">
+                    <div class="phase-divider" style="top: 10px;">
+                        <div class="phase-line"></div>
+                        <span class="phase-label">Fase 1: Validação de Identidade</span>
+                        <div class="phase-line"></div>
+                    </div>
+
+                    <div class="message" style="top: 60px; left: 0%; width: 33%;">
+                        <div class="message-line"><div class="message-label"><span class="message-number">1</span>Informa CPF</div></div>
+                        <div class="message-arrow arrow-right"></div>
+                    </div>
+
+                    <div class="message" style="top: 110px; left: 33%; width: 33%;">
+                        <div class="message-line"><div class="message-label"><span class="message-number">2</span>POST /validate-cpf</div></div>
+                        <div class="message-arrow arrow-right"></div>
+                    </div>
+
+                    <div class="message" style="top: 140px; left: 66%; width: 34%;">
+                        <div class="message-line"><div class="message-label"><span class="message-number">3</span>isCPFUsed(hash)</div></div>
+                        <div class="message-arrow arrow-right"></div>
+                    </div>
+
+                    <div class="message" style="top: 180px; left: 66%; width: 34%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">4</span>false (disponível)</div></div>
+                    </div>
+
+                    <div class="message" style="top: 220px; left: 33%; width: 33%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">5</span>{ valid: true }</div></div>
+                    </div>
+
+                    <div class="note" style="top: 80px; right: 0;">
+                        <div class="note-title">🔍 Validações API</div>
+                        • CPF na Whitelist<br>• Hash não consta no contrato
+                    </div>
+
+                    <div class="phase-divider" style="top: 280px;">
+                        <div class="phase-line"></div>
+                        <span class="phase-label">Fase 2: Geração de Chaves (Local)</span>
+                        <div class="phase-line"></div>
+                    </div>
+
+                    <div class="privacy-box" style="top: 320px; left: 28%; width: 12%; height: 280px;">
+                        <div class="privacy-label">🔐 PRIVACIDADE TOTAL</div>
+                    </div>
+
+                    <div class="message" style="top: 380px; left: 33.5%; width: 5%;">
+                        <div class="message-line" style="background:#4caf50"><div class="message-label" style="color:#2e7d32"><span class="message-number" style="background:#4caf50">6</span>crypto.getRandomValues()</div></div>
+                        <div class="message-arrow arrow-right" style="border-left-color:#4caf50"></div>
+                    </div>
+
+                    <div class="message" style="top: 460px; left: 33.5%; width: 5%;">
+                        <div class="message-line" style="background:#4caf50"><div class="message-label" style="color:#2e7d32"><span class="message-number" style="background:#4caf50">7</span>secp256k1 → Endereço</div></div>
+                        <div class="message-arrow arrow-right" style="border-left-color:#4caf50"></div>
+                    </div>
+
+                    <div class="message" style="top: 540px; left: 0%; width: 33%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">8</span>Solicita Backup da Chave</div></div>
+                    </div>
+
+                    <div class="note" style="top: 380px; left: 45%; width: 180px; background: #e8f5e9; border-color: #4caf50;">
+                        <div class="note-title" style="color:#2e7d32">🔑 Segredo do Eleitor</div>
+                        A <strong>Chave Privada</strong> nunca é enviada ao servidor. Ela permanece apenas na memória do navegador.
+                    </div>
+
+                    <div class="phase-divider" style="top: 620px;">
+                        <div class="phase-line"></div>
+                        <span class="phase-label">Fase 3: Registro On-chain</span>
+                        <div class="phase-line"></div>
+                    </div>
+
+                    <div class="message" style="top: 670px; left: 33%; width: 33%;">
+                        <div class="message-line"><div class="message-label"><span class="message-number">9</span>POST /register {cpf, addr}</div></div>
+                        <div class="message-arrow arrow-right"></div>
+                    </div>
+
+                    <div class="message" style="top: 710px; left: 66%; width: 34%;">
+                        <div class="message-line"><div class="message-label"><span class="message-number">10</span>registerVoter(addr, hash)</div></div>
+                        <div class="message-arrow arrow-right"></div>
+                    </div>
+
+                    <div class="message" style="top: 760px; left: 66%; width: 34%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">11</span>TX Confirmada ✓</div></div>
+                    </div>
+
+                    <div class="message" style="top: 810px; left: 33%; width: 33%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">12</span>{ success: true }</div></div>
+                    </div>
+
+                    <div class="message" style="top: 860px; left: 0%; width: 33%;">
+                        <div class="message-arrow arrow-left"></div>
+                        <div class="message-line dashed"><div class="message-label"><span class="message-number">13</span>Registro Concluído!</div></div>
+                    </div>
+
+                    <div class="result-box">
+                        <div class="result-title">✅ Status Final</div>
+                        <div class="result-content">
+                            Voter: 0x742d...F3a8<br>
+                            Auth: Authorized ✅<br>
+                            HasVoted: False
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div style="width:20px;height:2px;background:#444"></div> Requisição</div>
+            <div class="legend-item"><div style="width:20px;border-top:2px dashed #666"></div> Resposta</div>
+            <div class="legend-item"><div style="width:15px;height:15px;background:#e8f5e9;border:1px dashed #4caf50"></div> Processamento Local Seguro</div>
+            <div class="legend-item"><span style="color:#2e7d32;font-weight:bold">━━</span> Criptografia no Navegador</div>
+        </div>
+    </div>
+</body>
+</html>
