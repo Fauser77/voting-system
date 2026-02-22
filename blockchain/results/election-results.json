@@ -1,26 +1,26 @@
 {
-  "timestamp": "2026-02-22T18:54:38.248Z",
+  "timestamp": "2026-02-22T20:37:04.077Z",
   "votingEnded": true,
   "resultsPublished": true,
-  "totalVotes": "2",
+  "totalVotes": "4",
   "winner": "Maria Silva",
   "candidates": [
     {
       "name": "Maria Silva",
-      "voteCount": "1"
+      "voteCount": "3"
     },
     {
       "name": "João Santos",
-      "voteCount": "1"
+      "voteCount": "0"
     },
     {
       "name": "Ana Costa",
-      "voteCount": "0"
+      "voteCount": "1"
     }
   ],
   "participation": {
-    "authorized": "2",
-    "voted": "2",
+    "authorized": "4",
+    "voted": "4",
     "percentage": "100"
   },
   "decodingMethod": "Helios-style (Baby-step Giant-step)"

@@ -1,0 +1,488 @@
+/* ============================================
+   SISTEMA DE VOTAÇÃO BLOCKCHAIN
+   Design System - Inspirado no padrão gov.br
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Rawline:wght@400;500;600;700&family=Raleway:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Cores primárias */
+  --color-primary: #1351B4;
+  --color-primary-dark: #0C326F;
+  --color-primary-light: #2670E8;
+  --color-primary-pastel: #DBE8FB;
+
+  /* Cores de apoio */
+  --color-green: #168821;
+  --color-green-dark: #071D41;
+  --color-yellow: #FFCD07;
+  --color-yellow-dark: #A07800;
+
+  /* Tons de cinza */
+  --color-gray-900: #1B1B1B;
+  --color-gray-700: #333333;
+  --color-gray-500: #555555;
+  --color-gray-400: #888888;
+  --color-gray-200: #CCCCCC;
+  --color-gray-100: #F0F0F0;
+  --color-gray-50: #F8F8F8;
+  --color-white: #FFFFFF;
+
+  /* Feedback */
+  --color-success: #168821;
+  --color-success-bg: #E3F5E1;
+  --color-error: #E52207;
+  --color-error-bg: #FDE8E5;
+  --color-warning: #FFCD07;
+  --color-warning-bg: #FFF5CC;
+  --color-info: #1351B4;
+  --color-info-bg: #DBE8FB;
+
+  /* Tipografia */
+  --font-display: 'Raleway', sans-serif;
+  --font-body: 'Rawline', 'Segoe UI', system-ui, sans-serif;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Bordas */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.15);
+
+  /* Linha decorativa do gov.br */
+  --stripe-height: 6px;
+}
+
+/* Reset */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-gray-700);
+  background-color: var(--color-gray-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* ============================================
+   BARRA SUPERIOR — identidade gov
+   ============================================ */
+.gov-stripe {
+  height: var(--stripe-height);
+  background: linear-gradient(90deg,
+    #1351B4 0%,
+    #1351B4 33%,
+    #FFCD07 33%,
+    #FFCD07 66%,
+    #168821 66%,
+    #168821 100%
+  );
+}
+
+/* ============================================
+   HEADER PADRÃO
+   ============================================ */
+.gov-header {
+  background: var(--color-primary-dark);
+  color: var(--color-white);
+  padding: var(--space-4) var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.gov-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: inherit;
+}
+
+.gov-header__logo {
+  width: 40px;
+  height: 40px;
+  background: var(--color-yellow);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.gov-header__title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.gov-header__subtitle {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  font-weight: 400;
+  display: block;
+}
+
+/* ============================================
+   BREADCRUMB / VOLTAR
+   ============================================ */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: var(--space-2) 0;
+  transition: color 0.2s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+}
+
+.back-link:hover {
+  color: var(--color-primary-dark);
+}
+
+.back-link::before {
+  content: '←';
+  font-size: 1rem;
+}
+
+/* ============================================
+   LAYOUT CONTAINERS
+   ============================================ */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-gray-50);
+}
+
+.page-content {
+  flex: 1;
+  padding: var(--space-8) var(--space-4);
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.container--wide {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ============================================
+   TÍTULOS DE SEÇÃO
+   ============================================ */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+  line-height: 1.2;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-8);
+  line-height: 1.5;
+}
+
+/* ============================================
+   CARD BASE
+   ============================================ */
+.card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+}
+
+.card--elevated {
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+.form-group {
+  margin-bottom: var(--space-6);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  color: var(--color-gray-900);
+  background: var(--color-white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(19, 81, 180, 0.15);
+}
+
+.form-input:disabled {
+  background: var(--color-gray-100);
+  color: var(--color-gray-400);
+  cursor: not-allowed;
+}
+
+.form-hint {
+  font-size: 0.8rem;
+  color: var(--color-gray-400);
+  margin-top: var(--space-1);
+}
+
+/* ============================================
+   BOTÕES
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  text-decoration: none;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.btn--secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-primary-pastel);
+}
+
+.btn--success {
+  background: var(--color-green);
+  color: var(--color-white);
+  border-color: var(--color-green);
+}
+
+.btn--success:hover:not(:disabled) {
+  background: #0f5f18;
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   ALERTAS / MENSAGENS
+   ============================================ */
+.alert {
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: var(--space-4);
+}
+
+.alert--error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+  color: #8B0000;
+}
+
+.alert--success {
+  background: var(--color-success-bg);
+  border-color: var(--color-green);
+  color: #0a4410;
+}
+
+.alert--warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-yellow-dark);
+  color: #5c4200;
+}
+
+.alert--info {
+  background: var(--color-info-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* ============================================
+   BADGE / TAG
+   ============================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge--green {
+  background: var(--color-success-bg);
+  color: var(--color-green);
+}
+
+.badge--blue {
+  background: var(--color-info-bg);
+  color: var(--color-primary);
+}
+
+.badge--yellow {
+  background: var(--color-warning-bg);
+  color: var(--color-yellow-dark);
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+.divider {
+  height: 1px;
+  background: var(--color-gray-200);
+  margin: var(--space-6) 0;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.gov-footer {
+  background: var(--color-primary-dark);
+  color: rgba(255,255,255,0.7);
+  padding: var(--space-6) var(--space-8);
+  text-align: center;
+  font-size: 0.8rem;
+  margin-top: auto;
+}
+
+.gov-footer a {
+  color: var(--color-yellow);
+  text-decoration: none;
+}
+
+/* ============================================
+   UTILITÁRIOS
+   ============================================ */
+.text-center { text-align: center; }
+.text-muted { color: var(--color-gray-400); }
+.font-mono {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85em;
+}
+.break-all { word-break: break-all; }
+
+/* ============================================
+   ANIMAÇÕES
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeIn 0.3s ease both;
+}
+
+/* ============================================
+   RESPONSIVO
+   ============================================ */
+@media (max-width: 640px) {
+  .gov-header {
+    padding: var(--space-4);
+  }
+
+  .page-content {
+    padding: var(--space-4) var(--space-4);
+  }
+
+  .card {
+    padding: var(--space-6);
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+  }
+}

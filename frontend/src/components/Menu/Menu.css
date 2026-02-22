@@ -1,0 +1,274 @@
+.menu-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-gray-50);
+}
+
+/* ============ HEADER ============ */
+.menu-header {
+  background: var(--color-primary-dark);
+  color: var(--color-white);
+  padding: var(--space-5) var(--space-8);
+}
+
+.menu-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.menu-logo {
+  width: 48px;
+  height: 48px;
+  background: var(--color-yellow);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.menu-header__title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.menu-header__subtitle {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  display: block;
+  margin-top: 2px;
+}
+
+/* ============ MAIN ============ */
+.menu-main {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-12) var(--space-4) var(--space-8);
+}
+
+/* ============ HERO ============ */
+.menu-hero {
+  margin-bottom: var(--space-10);
+}
+
+.menu-hero__eyebrow {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-3);
+}
+
+.menu-hero__title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--color-gray-900);
+  line-height: 1.1;
+  margin-bottom: var(--space-4);
+}
+
+.menu-hero__highlight {
+  color: var(--color-primary);
+  position: relative;
+  display: inline-block;
+}
+
+.menu-hero__highlight::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--color-yellow);
+  z-index: -1;
+  border-radius: 2px;
+}
+
+.menu-hero__desc {
+  font-size: 1.05rem;
+  color: var(--color-gray-500);
+  max-width: 520px;
+  line-height: 1.65;
+}
+
+/* ============ GRID DE CARDS ============ */
+.menu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-10);
+}
+
+/* ============ CARD ============ */
+.menu-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  font-family: var(--font-body);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.menu-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
+  transform: scaleY(0);
+  transition: transform 0.18s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+.menu-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateX(4px);
+}
+
+.menu-card:hover::before {
+  transform: scaleY(1);
+}
+
+.menu-card:hover .menu-card__arrow {
+  transform: translateX(4px);
+}
+
+.menu-card__step {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--color-gray-100);
+  line-height: 1;
+  min-width: 48px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.menu-card__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.menu-card__content {
+  flex: 1;
+}
+
+.menu-card__top {
+  margin-bottom: var(--space-2);
+}
+
+.menu-card__label {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.menu-card__desc {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  line-height: 1.5;
+}
+
+.menu-card__arrow {
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+/* ============ SECURITY BAR ============ */
+.menu-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.menu-security__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-gray-500);
+}
+
+.menu-security__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--color-gray-200);
+}
+
+/* ============ RESPONSIVO ============ */
+@media (max-width: 640px) {
+  .menu-main {
+    padding: var(--space-8) var(--space-4);
+  }
+
+  .menu-hero__title {
+    font-size: 2.2rem;
+  }
+
+  .menu-card__step {
+    display: none;
+  }
+
+  .menu-security__divider {
+    display: none;
+  }
+
+  .menu-security {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .menu-header {
+    padding: var(--space-4);
+  }
+}
+
+.menu-security__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.menu-card__svg {
+  width: 32px;
+  height: 32px;
+}
