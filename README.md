@@ -1,166 +1,239 @@
-# Sistema de Votação Blockchain
+# Blockchain Voting System
 
-Um sistema de votação eletrônica seguro e transparente baseado em tecnologia blockchain, desenvolvido com contratos inteligentes Ethereum e rede Proof of Authority (PoA).
+Sistema de votação eletrônica descentralizado desenvolvido como Trabalho de Conclusão de Curso no IFSP Campus Piracicaba, curso de Engenharia de Computação.
+
+**Autor:** João Fauser Sant'Anna Bragion  
+**Orientador:** Prof. Me. Carlos Augusto Froldi
+
+---
 
 ## Visão Geral
 
-Este projeto implementa uma solução completa de votação digital que utiliza blockchain para garantir **imutabilidade**, **integridade** e **transparência** no processo eleitoral. O sistema elimina a necessidade de confiança em autoridades centrais, permitindo que qualquer participante possa verificar independentemente a validade dos resultados.
+O sistema combina uma rede blockchain privada baseada em Ethereum com criptografia homomórfica ElGamal para permitir que votos sejam **contabilizados sem serem decifrados individualmente**. A identidade do eleitor é desvinculada de sua transação na rede através de um padrão de relayer anônimo.
 
-## Arquitetura do Sistema
+### Propriedades garantidas
 
-O projeto está estruturado em três componentes principais:
+| Propriedade | Mecanismo |
+|---|---|
+| **Integridade** | Blockchain imutável — cada voto é registrado em bloco encadeado criptograficamente |
+| **Imutabilidade** | Consenso PoA com 5 validadores — alteração exige maioria do consórcio |
+| **Privacidade** | ElGamal Exponencial — votos permanecem cifrados durante toda a apuração |
+| **Auditabilidade** | Agregação homomórfica + Prova Chaum-Pedersen — resultado verificável sem revelar votos |
+| **Autenticidade** | ECDSA (secp256k1) — cada voto é assinado pela chave privada do eleitor |
+| **Anonimato transacional** | Padrão relayer — o `from` na blockchain é o relayer, não o eleitor |
+
+---
+
+## Arquitetura
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │ ←→ │  Blockchain     │ ←→ │  PoA Network    │
-│  Interface Web  │    │ Smart Contracts │    │   Infraestrutura│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      CAMADA DE APRESENTAÇÃO                     │
+│   ./frontend  —  React 18 SPA                                   │
+│   Cifragem ElGamal local · Geração de chaves · Assinatura EIP-191│
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTPS / REST
+┌────────────────────────▼────────────────────────────────────────┐
+│                       CAMADA DE SERVIÇOS                        │
+│   ./api  —  Node.js + Express                                   │
+│   Endpoints REST · Relayer Anônimo · Validação Off-chain        │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ JSON-RPC / ethers.js
+┌────────────────────────▼────────────────────────────────────────┐
+│                        CAMADA DE LÓGICA                         │
+│   ./blockchain  —  Solidity + Hardhat                           │
+│   Voting.sol · Verificação ECDSA · Registro de Votos Cifrados   │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ PoA / Clique
+┌────────────────────────▼────────────────────────────────────────┐
+│                    INFRAESTRUTURA DE REDE                       │
+│   ./poa-network  —  Go Ethereum (Geth)                          │
+│   Rede Privada · Consenso Clique · 5 Nós Validadores            │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Blockchain - Núcleo de Votação
-- **Smart Contract em Solidity** para lógica de votação
-- **Imutabilidade garantida** - votos registrados permanentemente
-- **Validações automáticas** - prevenção de fraudes e votos duplicados
-- **Transparência total** - todos os registros são auditáveis
-- **Controle de acesso** - apenas eleitores autorizados podem votar
-
-### PoA Network - Infraestrutura Confiável
-- **Rede privada Proof of Authority** com 5 validadores
-- **Consenso controlado** - validadores conhecidos e confiáveis
-- **Performance otimizada** - blocos a cada 15 segundos
-- **Ambiente controlado** - ideal para votações institucionais
-- **Custos previsíveis** - sem flutuações de gas fees
-
-### Frontend - Interface do Usuário
-- **Interface web intuitiva** desenvolvida em React
-- **Dashboards diferenciados** para eleitores e administradores
-- **Integração direta** com blockchain via Ethers.js
-- **Verificação de votos** em tempo real
-- **Monitoramento** da rede e transações
-
-## Garantias de Segurança
-
-### **Imutabilidade**
-- Votos registrados na blockchain **não podem ser alterados ou removidos**
-- Histórico completo preservado permanentemente
-- Impossibilidade de manipulação retroativa de resultados
-
-### **Integridade** 
-- **Validação automática** de cada voto através de smart contracts
-- Prevenção de votos duplicados por eleitor
-- Verificação de permissões antes de cada votação
-- Contabilização automática e transparente
-
-### **Transparência**
-- **Código aberto** - contratos e lógica totalmente auditáveis
-- Todos os votos são **publicamente verificáveis**
-- Rastreabilidade completa através de eventos blockchain
-- Resultados calculados automaticamente sem intervenção humana
-
-### **Auditabilidade**
-- Cada voto gera um **registro permanente** na blockchain
-- Eleitores podem **verificar independentemente** seu próprio voto
-- Observadores podem auditar todo o processo em tempo real
-- Hash criptográfico garante integridade dos dados
-
-## Funcionalidades Principais
-
-### Para Eleitores
-- **Login seguro** com chave privada
-- **Votação intuitiva** com interface amigável
-- **Verificação de voto** com prova blockchain
-- **Acompanhamento** de resultados em tempo real
-
-### Para Administradores
-- **Gestão de permissões** de voto
-- **Controle da eleição** (pausar/retomar)
-- **Monitoramento** da rede blockchain
-- **Deploy de novas eleições**
-- **Análise de estatísticas** em tempo real
-
-### Para Auditores
-- **Inspeção completa** da blockchain
-- **Verificação independente** de todos os votos
-- **Análise de blocos** e transações
-- **Validação** da integridade do processo
+---
 
 ## Estrutura do Repositório
 
 ```
-📦 sistema-votacao-blockchain/
-├── 📂 blockchain/           # Smart contracts e scripts de interação
-│   ├── contracts/          # Contratos Solidity
-│   ├── scripts/            # Deploy, interação e monitoramento
-│   └── test/              # Testes automatizados
-├── 📂 poa-network/         # Infraestrutura da rede PoA
-│   ├── genesis.json       # Configuração inicial da rede
-│   └── scripts/           # Gerenciamento de validadores
-└── 📂 frontend/            # Interface web React
-    ├── src/pages/         # Páginas da aplicação
-    ├── src/components/    # Componentes reutilizáveis
-    └── src/services/      # Serviços de integração
+voting-system/
+├── README.md                  ← este arquivo
+│
+├── blockchain/                ← contratos, scripts e motor criptográfico
+│   ├── contracts/
+│   │   └── Voting.sol
+│   ├── scripts/
+│   │   ├── core/              ← ElGamal, provas, agregação, BSGS
+│   │   ├── ops/               ← deploy, registro, apuração, fase
+│   │   ├── tests/             ← benchmarks de throughput e apuração
+│   │   └── tools/             ← gerador de parâmetros ElGamal
+│   ├── config/                ← arquivos de configuração da eleição
+│   └── hardhat.config.js
+│
+├── api/                       ← servidor Express (relayer)
+│   └── src/
+│       ├── routes/
+│       │   ├── authorization.js
+│       │   └── voting.js
+│       ├── services/
+│       │   └── blockchainService.js
+│       └── server.js
+│
+├── frontend/                  ← aplicação React
+│   └── src/
+│       ├── components/
+│       │   ├── Authorization/
+│       │   ├── Voting/
+│       │   ├── Results/
+│       │   └── Menu/
+│       ├── services/
+│       ├── utils/
+│       │   ├── elgamal.js     ← cifragem no browser
+│       │   ├── signature.js   ← assinatura EIP-191
+│       │   └── crypto.js      ← geração de chaves
+│       └── styles/
+│
+└── poa-network/               ← rede blockchain privada
+    ├── genesis.json
+    ├── initialize-validators.sh
+    ├── start-validators.sh
+    ├── stop-validators.sh
+    └── monitor-poa.sh
 ```
-
-## Stack Tecnológico
-
-### Blockchain
-- **Solidity** - Linguagem dos smart contracts
-- **Hardhat** - Framework de desenvolvimento
-- **Ethers.js** - Biblioteca de integração Web3
-
-### Infraestrutura
-- **Geth** - Cliente Ethereum
-- **Clique PoA** - Algoritmo de consenso
-
-### Frontend
-- **React 18** - Framework de interface
-- **Material-UI** - Biblioteca de componentes
-- **Context API** - Gerenciamento de estado
-- **MUI Charts** - Visualização de dados
-
-## Casos de Uso
-
-- **Eleições corporativas** - Votações em empresas e organizações
-- **Processos acadêmicos** - Eleições estudantis e universitárias
-- **Decisões comunitárias** - Votações em associações e cooperativas
-- **Consultas públicas** - Decisões participativas em governos locais
-- **Proof of Concept** - Demonstração de votação blockchain
-
-## Vantagens da Solução
-
-### **Versus Votação Tradicional**
-- **Impossibilidade de fraude** - validação automática
-- **Contagem instantânea** - resultados em tempo real
-- **Auditoria permanente** - registros imutáveis
-- **Transparência total** - processo público e verificável
-
-### **Versus Sistemas Centralizados**
-- **Descentralização** - sem ponto único de falha
-- **Independência** - sem necessidade de confiança em terceiros
-- **Verificabilidade** - qualquer um pode auditar
-- **Resistência a censura** - impossível bloquear votos válidos
-
-## Aspectos Técnicos Avançados
-
-### **Consensus Mechanism**
-A rede PoA utiliza o algoritmo **Clique** com 5 validadores pré-autorizados, garantindo finalidade determinística e blocos regulares a cada 15 segundos.
-
-### **Event-Driven Architecture**
-O sistema utiliza eventos blockchain (`VoteCast`) para rastreabilidade completa, permitindo reconstrução do histórico de votação e auditoria independente.
-
-### **Cryptographic Proof**
-Cada voto é protegido por hash criptográfico SHA-256, garantindo que qualquer tentativa de alteração seja imediatamente detectável.
-
-## Documentação Adicional
-
-- [`blockchain/README.md`](./blockchain/README.md) - Detalhes dos smart contracts e scripts
-- [`poa-network/README.md`](./poa-network/README.md) - Configuração e gerenciamento da rede
-- [`frontend/README.md`](./frontend/README.md) - Interface web e funcionalidades
-
-## Contribuição
-
-Este projeto demonstra a aplicação prática de blockchain em processos democráticos, combinando **segurança**, **transparência** e **usabilidade** em uma solução completa de votação digital.
 
 ---
 
-**⚡ Blockchain + PoA + React = Votação Digital Segura e Transparente**
+## Fluxo Completo da Eleição
+
+### 1. Configuração (off-chain, autoridade eleitoral)
+
+```bash
+# Gerar parâmetros ElGamal de 256 bits (primo seguro p = 2q+1)
+node blockchain/scripts/tools/elgamal-params-generator.js
+
+# Inicializar e iniciar a rede PoA
+cd poa-network
+./initialize-validators.sh
+./start-validators.sh
+
+# Deploy do contrato (fase inicial: Registration)
+cd blockchain
+npx hardhat run scripts/ops/deploy.js --network poa
+```
+
+### 2. Registro de Eleitores (fase Registration)
+
+O eleitor acessa o frontend, informa o CPF, e o sistema:
+1. Valida o CPF contra a whitelist off-chain (`election-cpfs.json`)
+2. Verifica se o CPF já foi usado on-chain (`checkCPFStatus`)
+3. Gera par de chaves ECDSA **localmente no navegador**
+4. Registra o endereço público na blockchain via API
+
+### 3. Votação (fase Voting)
+
+```bash
+# Transição de fase pela autoridade
+npx hardhat run scripts/ops/changePhase.js --network poa
+# Selecionar: 1 (Voting)
+```
+
+O eleitor acessa o frontend, informa seu endereço público, escolhe o candidato e:
+1. O voto é **cifrado localmente** com ElGamal Exponencial
+2. O voto cifrado é **assinado** com a chave privada (EIP-191)
+3. O pacote `{c1, c2, assinatura}` é enviado à API
+4. O **relayer** submete o voto à blockchain — o `from` na rede é o relayer
+
+### 4. Apuração (fase Ended)
+
+```bash
+# Encerrar votação
+npx hardhat run scripts/ops/changePhase.js --network poa
+# Selecionar: 2 (Ended)
+
+# Executar apuração
+npx hardhat run scripts/ops/monitor-blocks.js --network poa
+```
+
+O script de apuração:
+1. Coleta todos os votos cifrados da blockchain
+2. Executa **agregação homomórfica** — multiplica os cifertextos por candidato
+3. Decifra o agregado com a chave privada `x`
+4. Recupera a contagem via **Baby-step Giant-step** — O(√N)
+5. Gera **Prova Chaum-Pedersen** para verificação independente
+6. Publica resultados no contrato e persiste em `election-results.json`
+
+---
+
+## Pré-requisitos
+
+| Ferramenta | Versão | Uso |
+|---|---|---|
+| Node.js | 18.x LTS | Todas as camadas JS |
+| Go Ethereum (Geth) | 1.13.14-stable | Nós validadores |
+| npm | 8+ | Gerenciamento de pacotes |
+
+---
+
+## Instalação Rápida
+
+```bash
+# Clonar o repositório
+git clone https://github.com/Fauser77/voting-system.git
+cd voting-system
+
+# Instalar dependências de cada módulo
+cd blockchain && npm install
+cd ../api && npm install
+cd ../frontend && npm install
+
+# Configurar variáveis de ambiente
+cp api/.env.example api/.env
+# Editar api/.env com as chaves administrativas
+```
+
+Consulte o README de cada módulo para instruções detalhadas:
+
+- [`blockchain/README.md`](./blockchain/README.md) — contratos, scripts, motor criptográfico
+- [`api/README.md`](./api/README.md) — servidor relayer, endpoints REST
+- [`frontend/README.md`](./frontend/README.md) — interface do eleitor
+- [`poa-network/README.md`](./poa-network/README.md) — rede PoA, validadores
+
+---
+
+## Resultados Experimentais
+
+| Eleitores | TPS | Tempo total de registro | Tempo de apuração criptográfica |
+|---|---|---|---|
+| 100 | ~19,8 | ~5s | <1 ms |
+| 1.000 | ~20,0 | ~50s | ~5 ms |
+| 5.000 | ~14,7 | ~5,7 min | ~12 ms |
+| 10.000 | ~7,17 | ~23 min | ~20 ms |
+| 20.000 | ~5,31 | ~62 min | ~30 ms |
+
+O gargalo em escala não é a criptografia homomórfica, mas a interface RPC com a blockchain. Para mais de 5.000 eleitores, `getAllEncryptedVotes()` excede o gas limit de leitura do Geth, forçando consultas individuais por voto.
+
+---
+
+## Limitações Conhecidas
+
+- **Chave privada centralizada:** a decriptação final depende de uma única chave `x`. Trabalhos futuros devem implementar Decriptação de Limiar (Shamir's Secret Sharing).
+- **Receiptfreeness:** o `txHash` fornecido ao eleitor pode ser usado como recibo de voto, viabilizando coerção.
+- **Escalabilidade nacional:** o sistema é viável para pleitos de até ~20.000 eleitores na configuração atual. Escalas maiores requerem camadas de indexação externa (The Graph, eventos em vez de storage reads).
+- **Interface web:** produção exigiria hardware dedicado e supervisionado, análogo às urnas eletrônicas brasileiras.
+
+---
+
+## Referências Principais
+
+- Nakamoto, S. (2008). *Bitcoin: A Peer-to-Peer Electronic Cash System*
+- ElGamal, T. (1985). *A public key cryptosystem and a signature scheme based on discrete logarithms*
+- Cramer, R., Gennaro, R., Schoenmakers, B. (1997). *A Secure and Optimally Efficient Multi-Authority Election Scheme*
+- Adida, B. (2008). *Helios: Web-based Open-Audit Voting*
+- Castro, M., Liskov, B. (1999). *Practical Byzantine Fault Tolerance*
+
+---
+
+## Licença
+
+Este projeto foi desenvolvido para fins acadêmicos. Consulte o arquivo `LICENSE` para detalhes.
